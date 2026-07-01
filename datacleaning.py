@@ -7,48 +7,7 @@ fileRead = csv.DictReader(dataFile)
 
 for entry in fileRead:
     patients.append(entry)
-'''patients = [
-    {"id": 1, "age": "45", "gender": "M", "height_cm": "180", "weight_kg": "82", "smoker": "Yes", "diabetes": "No"},
-    {"id": 2, "age": "31", "gender": "Female", "height_cm": "165", "weight_kg": "61", "smoker": "N", "diabetes": "No"},
-    {"id": 3, "age": "", "gender": "male", "height_cm": "172", "weight_kg": "75", "smoker": "yes", "diabetes": "Unknown"},
-    {"id": 4, "age": "52", "gender": "F", "height_cm": "160", "weight_kg": "", "smoker": "No", "diabetes": "Yes"},
-    {"id": 5, "age": "27", "gender": "female", "height_cm": "168", "weight_kg": "58", "smoker": "False", "diabetes": "No"},
-    {"id": 6, "age": "45", "gender": "Male", "height_cm": "180", "weight_kg": "82", "smoker": "Yes", "diabetes": "No"},  # duplicate
-    {"id": 7, "age": "39", "gender": "M", "height_cm": "175", "weight_kg": "abc", "smoker": "No", "diabetes": "No"},
-    {"id": 8, "age": "22", "gender": "F", "height_cm": "158", "weight_kg": "54", "smoker": "Y", "diabetes": "No"},
-    {"id": 9, "age": "67", "gender": "Female", "height_cm": "162", "weight_kg": "70", "smoker": "No", "diabetes": "Yes"},
-    {"id":10, "age": "29", "gender": "Male", "height_cm": "", "weight_kg": "77", "smoker": "yes", "diabetes": "No"},
-    {"id":11, "age": "54", "gender": "female", "height_cm": "170", "weight_kg": "68", "smoker": "No", "diabetes": "yes"},
-    {"id":12, "age": "41", "gender": "M", "height_cm": "182", "weight_kg": "90", "smoker": "0", "diabetes": "No"},
-    {"id":13, "age": "36", "gender": "F", "height_cm": "159", "weight_kg": "60", "smoker": "1", "diabetes": "No"},
-    {"id":14, "age": "18", "gender": "Male", "height_cm": "177", "weight_kg": "69", "smoker": "No", "diabetes": ""},
-    {"id":15, "age": "73", "gender": "female", "height_cm": "155", "weight_kg": "64", "smoker": "No", "diabetes": "Yes"},
-    {"id":16, "age": "34", "gender": "m", "height_cm": "181", "weight_kg": "83", "smoker": "No", "diabetes": "No"},
-    {"id":17, "age": "50", "gender": "FEMALE", "height_cm": "166", "weight_kg": "71", "smoker": "YES", "diabetes": "NO"},
-    {"id":18, "age": "44", "gender": "Male", "height_cm": "174", "weight_kg": "79", "smoker": "", "diabetes": "No"},
-    {"id":19, "age": "60", "gender": "F", "height_cm": "161", "weight_kg": "67", "smoker": "No", "diabetes": "Yes"},
-    {"id":20, "age": "28", "gender": "female", "height_cm": "169", "weight_kg": "59", "smoker": "No", "diabetes": "No"},
-    {"id":21, "age": "47", "gender": "Male", "height_cm": "183", "weight_kg": "85", "smoker": "Y", "diabetes": "No"},
-    {"id":22, "age": "33", "gender": "female", "height_cm": "164", "weight_kg": "63", "smoker": "N", "diabetes": "No"},
-    {"id":23, "age": "", "gender": "F", "height_cm": "170", "weight_kg": "66", "smoker": "Unknown", "diabetes": "No"},
-    {"id":24, "age": "56", "gender": "male", "height_cm": "178", "weight_kg": "88", "smoker": "Yes", "diabetes": "Yes"},
-    {"id":25, "age": "40", "gender": "Female", "height_cm": "", "weight_kg": "72", "smoker": "No", "diabetes": "No"},
-    {"id":26, "age": "24", "gender": "M", "height_cm": "176", "weight_kg": "68", "smoker": "false", "diabetes": "No"},
-    {"id":27, "age": "65", "gender": "F", "height_cm": "157", "weight_kg": "73", "smoker": "Yes", "diabetes": "YES"},
-    {"id":28, "age": "38", "gender": "Female", "height_cm": "171", "weight_kg": "NaN", "smoker": "No", "diabetes": "No"},
-    {"id":29, "age": "51", "gender": "male", "height_cm": "179", "weight_kg": "81", "smoker": "1", "diabetes": "No"},
-    {"id":30, "age": "30", "gender": "f", "height_cm": "163", "weight_kg": "57", "smoker": "0", "diabetes": "No"},
-    {"id":31, "age": "42", "gender": "Male", "height_cm": "185", "weight_kg": "91", "smoker": "Yes", "diabetes": "No"},
-    {"id":32, "age": "37", "gender": "Female", "height_cm": "167", "weight_kg": "65", "smoker": "", "diabetes": "No"},
-    {"id":33, "age": "49", "gender": "M", "height_cm": "173", "weight_kg": "76", "smoker": "No", "diabetes": "unknown"},
-    {"id":34, "age": "26", "gender": "Female", "height_cm": "168", "weight_kg": "61", "smoker": "No", "diabetes": "No"},
-    {"id":35, "age": "58", "gender": "FEMALE", "height_cm": "160", "weight_kg": "74", "smoker": "YES", "diabetes": "Yes"},
-    {"id":36, "age": "21", "gender": "male", "height_cm": "182", "weight_kg": "", "smoker": "No", "diabetes": "No"},
-    {"id":37, "age": "63", "gender": "F", "height_cm": "156", "weight_kg": "69", "smoker": "Y", "diabetes": ""},
-    {"id":38, "age": "46", "gender": "Male", "height_cm": "177", "weight_kg": "84", "smoker": "No", "diabetes": "Yes"},
-    {"id":39, "age": "35", "gender": "female", "height_cm": "165", "weight_kg": "62", "smoker": "n", "diabetes": "No"},
-    {"id":40, "age": "45", "gender": "M", "height_cm": "180", "weight_kg": "82", "smoker": "Yes", "diabetes": "No"}  # duplicate of id=1
-]'''
+
 dataFile.close()
 
 def convertToInt(value):
