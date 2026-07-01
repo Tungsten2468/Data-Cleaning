@@ -1,7 +1,7 @@
 import csv
 
 patients = []
-dataFile = open("data/uncleanmedical.csv", newline="")
+dataFile = open("input_data/uncleanmedical.csv", newline="")
 fileRead = csv.DictReader(dataFile)
 
 for entry in fileRead:
@@ -124,7 +124,7 @@ def percentGend(key, targetValue ,gender):
         analysis = gender+' '+targetValue+" percentage:"+percentage+"%"  
     return analysis
 
-newCSV = open("cleanedmedical.csv", "w", newline="")
+newCSV = open("output_data/cleanedmedical.csv", "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
 dataFile.close()
 writtenCSV.writeheader()
