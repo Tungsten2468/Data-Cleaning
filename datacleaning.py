@@ -9,22 +9,19 @@ for entry in fileRead:
 
 dataFile.close()
 
-def convertToInt(value):
-    if(type(value) != str):
-        return
-    try:
-        convertedValue = value
-        convertedValue = int(value)
-        return convertedValue
-    except:
-        return "Unknown"
+for i in patients:
+    keys:i.getkeys()
+    
+    for g in keys:
+        if i[g] == 'nan' or i[g] == '':
+            i[g] =='N/A'
+
 
 #convert values to integer:
 for i in patients:
     if i['Age'] == '' or i['Age']== 'nan':
         i['Age']= 'Unknown'
     else:
-
         x = int(float(i['Age']))
         i['Age']= x
 
