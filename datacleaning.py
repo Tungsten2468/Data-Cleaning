@@ -1,4 +1,3 @@
-
 import csv
 
 patients = []
@@ -22,7 +21,13 @@ def convertToInt(value):
 
 #convert values to integer:
 for i in patients:
-    i['Age'] = convertToInt(i['Age'])
+    if i['Age'] == '' or i['Age']== 'nan':
+        i['Age']= 'Unknown'
+    else:
+
+        x = int(float(i['Age']))
+        i['Age']= x
+
 
 #fix male/female
 for i in patients:
@@ -118,43 +123,6 @@ def percentGend(key, targetValue ,gender):
     else:
         analysis = gender+' '+targetValue+" percentage:"+percentage+"%"  
     return analysis
-
-'''def plotBar(key, targetValue):
-    barValues = [0,0,0,0,0,0]
-    for i in patients: 
-        print(i[key])
-        try:
-            if(i[key] == targetValue):     
-                if i['Age'] < 20:
-                    barValues[0] += 1
-                elif i['Age'] >= 20 and i['Age'] <= 30:
-                    barValues[1] += 1
-                elif i['Age'] >= 30 and i['Age'] <= 40:
-                    barValues[2] += 1
-                elif i['Age'] >= 40 and i['Age'] <= 50:
-                    barValues[3] += 1
-                elif i['Age'] >= 50 and i['Age'] <= 60:
-                    barValues[4] += 1
-                elif i['Age'] >= 60:
-                    barValues[5] += 1
-        except:
-            continue
-
-    categories = ['>20', '20-30', '30-40', '40-50', '50-60', '60<']
-
-    plt.bar(categories, barValues)
-    plt.title(key+"(s) among age groups")
-    plt.xlabel("Age Group")
-    plt.ylabel("Amount")
-
-
-print(patients)
-print(getPercentage('Diagnosis', 'Diabetes'))
-print(percentGend('Smoker', 'Yes', 'Female'))
-print(percentGend('Diagnosis', 'Heart Disease', 'Male'))
-
-plotBar('Smoker', 'Yes')
-plt.show()'''
 
 newCSV = open("cleanedmedical.csv", "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
