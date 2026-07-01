@@ -1,5 +1,13 @@
 import matplotlib.pyplot as plt
-patients = [
+import csv
+
+patients = []
+dataFile = open("data/uncleanmedical.csv", newline="")
+fileRead = csv.DictReader(dataFile)
+
+for entry in fileRead:
+    patients.append(entry)
+'''patients = [
     {"id": 1, "age": "45", "gender": "M", "height_cm": "180", "weight_kg": "82", "smoker": "Yes", "diabetes": "No"},
     {"id": 2, "age": "31", "gender": "Female", "height_cm": "165", "weight_kg": "61", "smoker": "N", "diabetes": "No"},
     {"id": 3, "age": "", "gender": "male", "height_cm": "172", "weight_kg": "75", "smoker": "yes", "diabetes": "Unknown"},
@@ -40,9 +48,12 @@ patients = [
     {"id":38, "age": "46", "gender": "Male", "height_cm": "177", "weight_kg": "84", "smoker": "No", "diabetes": "Yes"},
     {"id":39, "age": "35", "gender": "female", "height_cm": "165", "weight_kg": "62", "smoker": "n", "diabetes": "No"},
     {"id":40, "age": "45", "gender": "M", "height_cm": "180", "weight_kg": "82", "smoker": "Yes", "diabetes": "No"}  # duplicate of id=1
-]
+]'''
+dataFile.close()
 
 def convertToInt(value):
+    if(type(value) != str):
+        return
     try:
         convertedValue = value
         convertedValue = int(value)
@@ -52,21 +63,19 @@ def convertToInt(value):
 
 #convert values to integer:
 for i in patients:
-    i['age'] = convertToInt(i['age'])
-    i['height_cm'] = convertToInt(i['height_cm'])
-    i['weight_kg'] = convertToInt(i['weight_kg'])
+    i['Age'] = convertToInt(i['Age'])
 
 #fix male/female
 for i in patients:
     values = list(i.values())
     gender = values[2]
-    if values != 'Male' or values !='Female':
+    if gender != 'Male' or gender !='Female':
         if gender[0] == 'M'or gender[0] =='m':
             gender = 'Male'
-            i['gender']=gender
+            i['Gender']=gender
         elif gender[0] == 'F' or gender[0] =='f':
             gender = 'Female'
-            i['gender']=gender
+            i['Gender']=gender
     
 #delete dupes
 filteredPatients = []
@@ -84,23 +93,22 @@ for i in patients:
 
 patients = filteredPatients
 
-#fix smoker/diabetes
+#fix binary values
 def checkFirstChar(word):
     if(len(word) > 0):
         if(word[0] == 'y' or word[0] == 'Y' or word[0] == '1'):
             return "Yes"
-        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0"):
+        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0" and word[0] != 'nan'):
             return "No"
     return "Unknown"
 
 for i in patients:
     values = list(i.values())
-    smoke = values[5]
-    diabete= values[6]
+    smoke = values[6]
     
-    i['smoker'] = checkFirstChar(smoke)
-    i['diabetes'] = checkFirstChar(diabete)
+    i['Smoker'] = checkFirstChar(smoke)
 
+#old one
 def getPercentage(v):
     totalEntries = 0
     totalYes = 0
@@ -117,87 +125,58 @@ def getPercentage(v):
     analysis = v+"(s): "+percentage+"%"
     return analysis 
 
-#for additional filters
-'''def getPercentage(v, targetValue, v2 = None, targetValue2 = None):
-    hasAdditionalParameter = v2 != None
+def getPercentage(key, targetValue):
     totalEntries = 0
     totalYes = 0
     for entry in range(len(patients)):
-        if(hasAdditionalParameter):
-            if(patients[entry][v2] == targetValue2):
-                totalEntries += 1
-        else:
-            totalEntries += 1
+        totalEntries += 1
     for i in patients:
-        if i[v] == targetValue:
+        if i[key] == targetValue:
             totalYes += 1
     percentage = (totalYes/totalEntries) * 100
     #truncate if needed
     percentage = str(percentage)
     if(len(percentage) > 4):
         percentage = percentage[0:5]
-    if(hasAdditionalParameter):
-        analysis = targetValue2 + " "+ targetValue+" "+v+"(s): "+percentage+"%"
-    else:
-        analysis = targetValue+" "+v+"(s): "+percentage+"%"
-    return analysis     
-    
-print(getPercentage("gender", "Female", "smoker", "Yes"))'''
-def percentGend(g ,gender):
+    analysis = targetValue+" percentage: "+percentage+"%"
+    return analysis 
+
+def percentGend(key, targetValue ,gender):
     totalYes =0
     genderYes=0
     for i in patients:
-        if i[g] =='Yes'and i['gender'] == gender:
+        if i[key] == targetValue and i['Gender'] == gender:
             totalYes +=1
             genderYes +=1
-        if i[g] =='Yes'and not i['gender'] ==gender:
+        if i[key] == targetValue and not i['Gender'] ==gender:
             totalYes +=1
     percentage =(genderYes/totalYes)*100
     percentage= str(percentage)
     if(len(percentage)>4):
         percentage = percentage[0:5]
-    analysis = gender+' '+g+" percentage:"+percentage+"%" 
+    if(targetValue == 'Yes' or targetValue == 'No'): #appropriate message based off if answer is binary or specific
+        analysis = gender+' '+key+" percentage:"+percentage+"%" 
+    else:
+        analysis = gender+' '+targetValue+" percentage:"+percentage+"%"  
     return analysis
-print(patients)
 
-def plotgraph(g):
-    for i in patients:
-        if i[g] =='Yes'and i['gender'] == "Male":
-            if i['weight_kg'] == 'Unknown'or i['height_cm'] =='Unknown':
-                continue
-            else:
-                x = i['weight_kg']
-                y = i['height_cm']
-                line1 = plt.scatter(x,y,color = 'blue', marker= 'o',label='Male')
-        elif i[g] =='Yes'and i['gender'] == "Female":
-            if i['weight_kg'] == 'Unknown'or i['height_cm'] =='Unknown':
-                continue
-            else:
-                x = i['weight_kg']
-                y = i['height_cm']
-                line2 = plt.scatter(x,y,color = 'pink', marker= 'o',label='Female')
-    plt.xlabel('Weight in kg')  
-    plt.ylabel('Height in cm')
-    plt.title(g+'(s)')
-    plt.legend(loc = "lower right", handles = [line1, line2], labels=["Male", "Female"])
-    plt.show()
-
-def plotBar(g, targetValue):
+'''def plotBar(key, targetValue):
     barValues = [0,0,0,0,0,0]
     for i in patients: 
+        print(i[key])
         try:
-            if(i[g] == targetValue):     
-                if i['age'] < 20:
+            if(i[key] == targetValue):     
+                if i['Age'] < 20:
                     barValues[0] += 1
-                elif i['age'] >= 20 and i['age'] <= 30:
+                elif i['Age'] >= 20 and i['Age'] <= 30:
                     barValues[1] += 1
-                elif i['age'] >= 30 and i['age'] <= 40:
+                elif i['Age'] >= 30 and i['Age'] <= 40:
                     barValues[2] += 1
-                elif i['age'] >= 40 and i['age'] <= 50:
+                elif i['Age'] >= 40 and i['Age'] <= 50:
                     barValues[3] += 1
-                elif i['age'] >= 50 and i['age'] <= 60:
+                elif i['Age'] >= 50 and i['Age'] <= 60:
                     barValues[4] += 1
-                elif i['age'] >= 60:
+                elif i['Age'] >= 60:
                     barValues[5] += 1
         except:
             continue
@@ -205,15 +184,23 @@ def plotBar(g, targetValue):
     categories = ['>20', '20-30', '30-40', '40-50', '50-60', '60<']
 
     plt.bar(categories, barValues)
-    plt.title(g+"(s) among age groups")
+    plt.title(key+"(s) among age groups")
     plt.xlabel("Age Group")
     plt.ylabel("Amount")
-    #plt.bar(['>20', '20-30', '30-40', '40-50', '50-60', '60<'],[category], totalYes)
 
 
-#plotgraph('smoker')
-#plotgraph('diabetes')
-plotBar('smoker', 'Yes')
-plt.show()
-plotBar('diabetes', 'Yes')
-plt.show()
+print(patients)
+print(getPercentage('Diagnosis', 'Diabetes'))
+print(percentGend('Smoker', 'Yes', 'Female'))
+print(percentGend('Diagnosis', 'Heart Disease', 'Male'))
+
+plotBar('Smoker', 'Yes')
+plt.show()'''
+
+newCSV = open("cleanedmedical.csv", "w", newline="")
+writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
+dataFile.close()
+writtenCSV.writeheader()
+for entry in patients:
+    writtenCSV.writerow(entry)
+newCSV.close()
