@@ -36,6 +36,9 @@ for i in patients:
             gender = 'N/A'
             i['Gender']=gender
 
+
+
+
 #delete dupes
 filteredPatients = []
 def isDupe(comparing):

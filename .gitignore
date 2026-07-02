@@ -1,7 +1,6 @@
 input_data
 output_data
-<<<<<<< HEAD
-=======
+
 olddatacleaning.py
 cleanedmedical.csv
->>>>>>> c928d45515ecb9e84203e927c0e743ced71a74d0
+
