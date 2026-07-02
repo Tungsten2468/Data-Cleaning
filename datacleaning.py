@@ -20,6 +20,12 @@ for i in patients:
         x = int(float(i['Age']))
         i['Age']= x
 
+#handle all empty cells:
+for i in patients:
+    keys = list(i.keys())
+    for e in keys:
+        if i[e] == '' or i[e] == 'nan':
+            i[e] = 'N/A'
 
 #fix male/female
 for i in patients:
@@ -28,13 +34,11 @@ for i in patients:
     if gender != 'Male' or gender !='Female':
         if gender[0] == 'M'or gender[0] =='m':
             gender = 'Male'
-            i['Gender']=gender
         elif gender[0] == 'F' or gender[0] =='f':
             gender = 'Female'
-            i['Gender']=gender
         elif gender =='nan' or len(gender) == 0:
             gender = 'N/A'
-            i['Gender']=gender
+    i['Gender']=gender
 
 #delete dupes
 filteredPatients = []
@@ -57,9 +61,9 @@ def checkFirstChar(word):
     if(len(word) > 0):
         if(word[0] == 'y' or word[0] == 'Y' or word[0] == '1'):
             return "Yes"
-        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0" and word[0] != 'nan'):
+        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0" and word[0] != 'N/A'):
             return "No"
-    return "Unknown"
+    return "N/A"
 
 for i in patients:
     values = list(i.values())
