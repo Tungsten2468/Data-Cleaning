@@ -57,9 +57,6 @@ def isDupe(comparing):
             return True
         else:
             return False
-
-
-
 for i in data:
     dataToAdd = list(i.values())
     if(not isDupe(dataToAdd[1:])):
@@ -69,6 +66,12 @@ for i in data:
 
 data = filteredData
 
+for g in data:
+    values = list(g.values())
+    height = values[1]
+    height=
+    if height > 70:
+        print (height)
 
 
 
