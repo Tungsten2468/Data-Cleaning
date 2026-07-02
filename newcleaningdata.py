@@ -151,6 +151,19 @@ def calcMean(key):
         mean = round((sum/entryAmnt),2)
     return "Mean "+key+" :"+str(mean)
 
+def calcMean(key):
+    entryAmnt = 0
+    sum = 0
+    for i in data:
+        try:
+            sum += float(i[key])
+            entryAmnt += 1
+        except:
+            return "Value must only contain numbers, not text"
+        mean = round((sum/entryAmnt),2)
+    return "Mean "+key+" : "+str(mean)
+
+
 def histoPlot(g):
     mean =calcMean(g)
     xVals = []
