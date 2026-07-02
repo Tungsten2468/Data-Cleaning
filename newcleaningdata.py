@@ -1,5 +1,4 @@
 import csv
-
 import math
 
 data = []
@@ -132,10 +131,7 @@ def categorizeBMI(BMI):
         category = 'Obese'
         obs+=1
     
-    return category
-
-
-    
+    return category  
 
 def calcMean(key):
     entryAmnt = 0
@@ -149,6 +145,21 @@ def calcMean(key):
         mean = sum/entryAmnt
     return "Mean "+key+" is "+str(mean)
 
+def calcMedian(key):
+    inOrder = []
+    for i in data:
+        inOrder.append(i[key])
+    inOrder.sort()
+    median = 0
+    print(len(inOrder))
+    if(len(inOrder) % 2 == 0): #if list amount is even
+        median = inOrder[int(len(inOrder)/2)]
+        #middle2 = middle1 + 1
+        #median = (middle1+middle2)/2
+    elif(not len(inOrder) % 2 == 0): #if list amount is odd
+        median = inOrder[int((len(inOrder) + 1)/2)]
+    return "Median of "+key+" is "+str(median)
+        
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
@@ -179,6 +190,8 @@ print ('Underweights:',under
 
 print(reportRowsColumns())
 print(calcMean('BMI'))
+print(calcMedian('BMI'))
+
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
