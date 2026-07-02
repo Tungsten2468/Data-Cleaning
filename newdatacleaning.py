@@ -125,6 +125,18 @@ def categorizeBMI(BMI):
         category = 'Obese'
     return category
 
+def calcMean(key):
+    entryAmnt = 0
+    sum = 0
+    for i in data:
+        try:
+            sum += float(i[key])
+            entryAmnt += 1
+        except:
+            return "Value must only contain numbers, not text"
+        mean = sum/entryAmnt
+    return "Mean "+key+" is "+str(mean)
+
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
@@ -137,13 +149,14 @@ for i in data:
     i['BMI'] = calcBMI(i['Height(Centimeters)'], i['Weight(Kilograms)'])
     i['BMI Category'] = categorizeBMI(i['BMI'])
 
-print(reportRowsColumns())
-
 for i in data:
     i['Height(Inches)'] = demicalfix(i['Height(Inches)'])
     i['Weight(Pounds)'] = demicalfix(i['Weight(Pounds)'])
     i['BMI'] = demicalfix(i['BMI'])
+
 #checkEveryDataType()
+print(reportRowsColumns())
+print(calcMean('BMI'))
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
