@@ -1,5 +1,6 @@
 input_data
 output_data
-
+.vscode
 olddatacleaning.py
 cleanedmedical.csv
+venv
