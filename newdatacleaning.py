@@ -113,22 +113,36 @@ def calcBMI(height, weight):
     bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
     return bmi
 
+def categorizeBMI(BMI):
+    category = ""
+    if(BMI < 18.5):
+        category = 'Underweight'
+    elif(BMI >= 18.5 or BMI <= 24.9):
+        category = 'Normal'
+    elif(BMI >= 25.0 or BMI <= 29.9):
+        category = 'Overweight'
+    elif(BMI >= 30):
+        category = 'Obese'
+    return category
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
+newColumn("BMI Category")
 
 #compute height in cm, weight in kg and BMI
 for i in data:
     i['Height(Centimeters)'] = inchToCm(i['Height(Inches)'])
     i['Weight(Kilograms)'] = poundToKg(i['Weight(Pounds)'])
     i['BMI'] = calcBMI(i['Height(Centimeters)'], i['Weight(Kilograms)'])
+    i['BMI Category'] = categorizeBMI(i['BMI'])
 
 print(reportRowsColumns())
 
 for i in data:
     i['Height(Inches)'] = demicalfix(i['Height(Inches)'])
     i['Weight(Pounds)'] = demicalfix(i['Weight(Pounds)'])
+    i['BMI'] = demicalfix(i['BMI'])
 #checkEveryDataType()
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
