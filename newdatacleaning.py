@@ -28,21 +28,25 @@ for i in data:
         if i[e] == '' or i[e] == 'nan':
             i[e] = 'N/A'
 
-#fix male/female
-'''for i in data:
-    values = list(i.values())
-    gender = values[2]
-    if gender != 'Male' or gender !='Female':
-        if gender[0] == 'M'or gender[0] =='m':
-            gender = 'Male'
-        elif gender[0] == 'F' or gender[0] =='f':
-            gender = 'Female'
-        elif gender =='nan' or len(gender) == 0:
-            gender = 'N/A'
-    i['Gender']=gender'''
+def newColumn(columnName):
+    fileRead.fieldnames.append(columnName)
 
+#report rows and columns
+def reportRowsColumns():
+    totalRows = 0
+    totalColumns = 0
+    for i in data: #count rows
+        totalRows += 1
+    for i in fileRead.fieldnames: 
+        totalColumns += 1
+    return "Rows: "+str(totalRows)+"; Columns:"+str(totalColumns)
 
-
+#check data types
+def checkEveryDataType():
+    for i in data:
+        values = list(i.values())
+        for e in range(len(values)):
+            print(values[e]+" is "+str(type(values[e])))
 
 #delete dupes
 filteredData = []
@@ -71,29 +75,6 @@ def checkFirstChar(word):
             return "No"
     return "N/A"
 
-'''for i in data:
-    values = list(i.values())
-    smoke = values[6]
-    
-    i['Smoker'] = checkFirstChar(smoke)'''
-
-#old one
-def getPercentage(v):
-    totalEntries = 0
-    totalYes = 0
-    for entry in range(len(data)):
-        totalEntries += 1
-    for i in data:
-        if i[v] == "Yes":
-            totalYes += 1
-    percentage = (totalYes/totalEntries) * 100
-    #truncate if needed
-    percentage = str(percentage)
-    if(len(percentage) > 4):
-        percentage = percentage[0:5]
-    analysis = v+"(s): "+percentage+"%"
-    return analysis 
-
 def getPercentage(key, targetValue):
     totalEntries = 0
     totalYes = 0
@@ -110,26 +91,24 @@ def getPercentage(key, targetValue):
     analysis = targetValue+" percentage: "+percentage+"%"
     return analysis 
 
-'''def percentGend(key, targetValue ,gender):
-    totalYes =0
-    genderYes=0
-    for i in data:
-        if i[key] == targetValue and i['Gender'] == gender:
-            totalYes +=1
-            genderYes +=1
-        if i[key] == targetValue and not i['Gender'] ==gender:
-            totalYes +=1
-    percentage =(genderYes/totalYes)*100
-    percentage= str(percentage)
-    if(len(percentage)>4):
-        percentage = percentage[0:5]
-    if(targetValue == 'Yes' or targetValue == 'No'): #appropriate message based off if answer is binary or specific
-        analysis = gender+' '+key+" percentage:"+percentage+"%" 
-    else:
-        analysis = gender+' '+targetValue+" percentage:"+percentage+"%"  
-    return analysis'''
+def inchToCm(valueToConvert):
+    valueToConvert = float(valueToConvert) * 2.54
+    return valueToConvert
 
+def poundToKg(valueToConvert):
+    valueToConvert = float(valueToConvert) * 0.453592
+    return valueToConvert
 
+newColumn("Height(Centimeters)")
+newColumn("Weight(Kilograms)")
+
+#compute height in centemeters for every row
+for i in data:
+    i['Height(Centimeters)'] = inchToCm(i['Height(Inches)'])
+    i['Weight(Kilograms)'] = poundToKg(i['Weight(Pounds)'])
+
+print(reportRowsColumns())
+#checkEveryDataType()
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
