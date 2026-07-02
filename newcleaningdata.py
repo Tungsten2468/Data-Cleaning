@@ -112,18 +112,30 @@ def poundToKg(valueToConvert):
 def calcBMI(height, weight):
     bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
     return bmi
-
+under =0
+norm=0
+over=0
+obs=0
 def categorizeBMI(BMI):
     category = ""
+    global under,norm,over,obs
     if(BMI < 18.5):
         category = 'Underweight'
+        under +=1
     elif(BMI >= 18.5 or BMI <= 24.9):
         category = 'Normal'
+        norm +=1
     elif(BMI >= 25.0 or BMI <= 29.9):
         category = 'Overweight'
+        over +=1
     elif(BMI >= 30):
         category = 'Obese'
+        obs+=1
+    
     return category
+
+
+    
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
@@ -136,7 +148,6 @@ for i in data:
     i['Weight(Kilograms)'] = poundToKg(i['Weight(Pounds)'])
     i['BMI'] = calcBMI(i['Height(Centimeters)'], i['Weight(Kilograms)'])
     i['BMI Category'] = categorizeBMI(i['BMI'])
-
 print(reportRowsColumns())
 
 for i in data:
@@ -144,6 +155,14 @@ for i in data:
     i['Weight(Pounds)'] = demicalfix(i['Weight(Pounds)'])
     i['BMI'] = demicalfix(i['BMI'])
 #checkEveryDataType()
+
+print ('Underweights:',under
+        ,'\nNormal:',norm,
+        '\nOverweight:',over,
+        '\nObese',obs)
+
+
+
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
