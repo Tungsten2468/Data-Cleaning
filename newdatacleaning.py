@@ -75,6 +75,12 @@ def checkFirstChar(word):
             return "No"
     return "N/A"
 
+def demicalfix(valueToFix):
+    valueToFix = float(valueToFix)
+    valueToFix = round(valueToFix,2)
+    return valueToFix
+
+
 def getPercentage(key, targetValue):
     totalEntries = 0
     totalYes = 0
@@ -93,10 +99,12 @@ def getPercentage(key, targetValue):
 
 def inchToCm(valueToConvert):
     valueToConvert = float(valueToConvert) * 2.54
+    valueToConvert=round(valueToConvert , 2)
     return valueToConvert
 
 def poundToKg(valueToConvert):
     valueToConvert = float(valueToConvert) * 0.453592
+    valueToConvert=round(valueToConvert , 2)
     return valueToConvert
 
 #height must be in cm becuase from cm it is converted to meters
@@ -117,6 +125,10 @@ for i in data:
     i['BMI'] = calcBMI(i['Height(Centimeters)'], i['Weight(Kilograms)'])
 
 print(reportRowsColumns())
+
+for i in data:
+    i['Height(Inches)'] = demicalfix(i['Height(Inches)'])
+    i['Weight(Pounds)'] = demicalfix(i['Weight(Pounds)'])
 #checkEveryDataType()
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
