@@ -99,13 +99,22 @@ def poundToKg(valueToConvert):
     valueToConvert = float(valueToConvert) * 0.453592
     return valueToConvert
 
+#height must be in cm becuase from cm it is converted to meters
+#weight must be in kg
+def calcBMI(height, weight):
+    bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
+    return bmi
+
+
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
+newColumn("BMI")
 
-#compute height in centemeters for every row
+#compute height in cm, weight in kg and BMI
 for i in data:
     i['Height(Centimeters)'] = inchToCm(i['Height(Inches)'])
     i['Weight(Kilograms)'] = poundToKg(i['Weight(Pounds)'])
+    i['BMI'] = calcBMI(i['Height(Centimeters)'], i['Weight(Kilograms)'])
 
 print(reportRowsColumns())
 #checkEveryDataType()
