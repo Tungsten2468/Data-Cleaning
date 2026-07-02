@@ -1,6 +1,5 @@
 import csv
-import matplotlib as plt
-import numpy as np
+import matplotlib.pyplot as plt
 import math
 
 data = []
@@ -13,6 +12,11 @@ for entry in fileRead:
 
 dataFile.close()
 
+#variables
+under =0
+norm=0
+over=0
+obs=0
 
 #convert values to integer:
 '''for i in data:
@@ -113,10 +117,7 @@ def poundToKg(valueToConvert):
 def calcBMI(height, weight):
     bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
     return bmi
-under =0
-norm=0
-over=0
-obs=0
+
 def categorizeBMI(BMI):
     category = ""
     global under,norm,over,obs
@@ -136,7 +137,30 @@ def categorizeBMI(BMI):
     return category
 
 
-    
+
+#calc mean
+def calcMean(key):
+    entryAmnt = 0
+    sum = 0
+    for i in data:
+        try:
+            sum += float(i[key])
+            entryAmnt += 1
+        except:
+            return "Value must only contain numbers, not text"
+        mean = round((sum/entryAmnt),2)
+    return "Mean "+key+" :"+str(mean)
+
+def histoPlot(g):
+    mean =calcMean(g)
+    xVals = []
+    for i in data:
+        xVals.append(i[g])
+    plt.hist(xVals)
+    plt.title(mean)
+    plt.ylabel('Amount of People')
+    plt.xlabel(g)
+    plt.show()
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
@@ -151,10 +175,12 @@ for i in data:
     i['BMI Category'] = categorizeBMI(i['BMI'])
 print(reportRowsColumns())
 
+
 for i in data:
     i['Height(Inches)'] = demicalfix(i['Height(Inches)'])
     i['Weight(Pounds)'] = demicalfix(i['Weight(Pounds)'])
     i['BMI'] = demicalfix(i['BMI'])
+
 #checkEveryDataType()
 
 print ('Underweights:',under
@@ -162,8 +188,13 @@ print ('Underweights:',under
         '\nOverweight:',over,
         '\nObese',obs)
 
-
-
+histoPlot('Weight(Pounds)')
+histoPlot('Weight(Kilograms)')
+histoPlot('Height(Centimeters)')
+histoPlot('Height(Inches)')
+histoPlot('BMI')
+print(reportRowsColumns())
+print(calcMean('BMI'))
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
