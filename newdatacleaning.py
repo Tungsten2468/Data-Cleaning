@@ -57,6 +57,9 @@ def isDupe(comparing):
             return True
         else:
             return False
+
+
+
 for i in data:
     dataToAdd = list(i.values())
     if(not isDupe(dataToAdd[1:])):
@@ -65,6 +68,9 @@ for i in data:
         print("ignoring duplicate ",dataToAdd)
 
 data = filteredData
+
+
+
 
 #fix binary values
 def checkFirstChar(word):
