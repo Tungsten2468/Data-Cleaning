@@ -1,5 +1,7 @@
 import csv
 
+import math
+
 patients = []
 dataFile = open("input_data/uncleanmedical.csv", newline="")
 fileRead = csv.DictReader(dataFile)
@@ -9,18 +11,11 @@ for entry in fileRead:
 
 dataFile.close()
 
-for i in patients:
-    keys:i.getkeys()
-    
-    for g in keys:
-        if i[g] == 'nan' or i[g] == '':
-            i[g] =='N/A'
-
 
 #convert values to integer:
 for i in patients:
     if i['Age'] == '' or i['Age']== 'nan':
-        i['Age']= 'Unknown'
+        i['Age']= 'N/A'
     else:
         x = int(float(i['Age']))
         i['Age']= x
@@ -37,7 +32,10 @@ for i in patients:
         elif gender[0] == 'F' or gender[0] =='f':
             gender = 'Female'
             i['Gender']=gender
-    
+        elif gender =='nan' or len(gender) == 0:
+            gender = 'N/A'
+            i['Gender']=gender
+
 #delete dupes
 filteredPatients = []
 def isDupe(comparing):
@@ -120,6 +118,8 @@ def percentGend(key, targetValue ,gender):
     else:
         analysis = gender+' '+targetValue+" percentage:"+percentage+"%"  
     return analysis
+
+
 
 newCSV = open("output_data/cleanedmedical.csv", "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
