@@ -13,7 +13,6 @@ for entry in fileRead:
 dataFile.close()
 
 
-
 #convert values to integer:
 '''for i in data:
     if i['Age'] == '' or i['Age']== 'nan':
@@ -144,27 +143,8 @@ def calcMean(key):
             entryAmnt += 1
         except:
             return "Value must only contain numbers, not text"
-<<<<<<< HEAD
-        mean = round((sum/entryAmnt),2)
-    return "Mean "+key+" : "+str(mean)
-
-def scatterPlot(g ,l ):
-    xVals=[]
-    yVals=[]
-    for i in data:
-        xVals.append(i[g])
-        yVals.append(i[l])
-    plt.scatter(xVals,yVals, color='purple', marker='o')
-    plt.ylabel(l)
-    plt.xlabel(g)
-    plt.show()
-
-
-
-=======
         mean = sum/entryAmnt
     return "Mean "+key+" is "+str(mean)
->>>>>>> e067ed19fee70a8808d0f462d8a50433f0a86190
 
 def calcMedian(key):
     inOrder = []
@@ -218,11 +198,28 @@ def histoPlot(g):
     plt.xlabel(g)
     plt.show()
 
+def scatterPlot(g,l):
+    xVals=[]
+    yVals=[]
+    for i in data:
+        xVals.append(i[g])
+        yVals.append(i[l])   
+    plt.scatter(xVals,yVals,color='purple',alpha=0.1, marker='o') 
+    plt.ylabel(l)
+    plt.xlabel(g)
+    plt.show()
+
+'''
 histoPlot('Weight(Pounds)')
 histoPlot('Weight(Kilograms)')
 histoPlot('Height(Centimeters)')
 histoPlot('Height(Inches)')
 histoPlot('BMI')
+
+scatterPlot('Height(Inches)','Weight(Pounds)')
+scatterPlot('Height(Centimeters)','Weight(Kilograms)')
+'''
+
 
 
 print(reportRowsColumns())
