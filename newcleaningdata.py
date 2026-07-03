@@ -1,6 +1,6 @@
 import csv
-import matplotlib.pyplot as plt
 import math
+import matplotlib.pyplot as plt
 
 data = []
 fileName = "heightweight.csv"
@@ -12,11 +12,6 @@ for entry in fileRead:
 
 dataFile.close()
 
-#variables
-under =0
-norm=0
-over=0
-obs=0
 
 
 #convert values to integer:
@@ -118,7 +113,10 @@ def poundToKg(valueToConvert):
 def calcBMI(height, weight):
     bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
     return bmi
-
+under =0
+norm=0
+over=0
+obs=0
 def categorizeBMI(BMI):
     category = ""
     global under,norm,over,obs
@@ -135,22 +133,7 @@ def categorizeBMI(BMI):
         category = 'Obese'
         obs+=1
     
-    return category
-
-
-
-#calc mean
-def calcMean(key):
-    entryAmnt = 0
-    sum = 0
-    for i in data:
-        try:
-            sum += float(i[key])
-            entryAmnt += 1
-        except:
-            return "Value must only contain numbers, not text"
-        mean = round((sum/entryAmnt),2)
-    return "Mean "+key+" :"+str(mean)
+    return category  
 
 def calcMean(key):
     entryAmnt = 0
@@ -161,6 +144,7 @@ def calcMean(key):
             entryAmnt += 1
         except:
             return "Value must only contain numbers, not text"
+<<<<<<< HEAD
         mean = round((sum/entryAmnt),2)
     return "Mean "+key+" : "+str(mean)
 
@@ -177,18 +161,26 @@ def scatterPlot(g ,l ):
 
 
 
+=======
+        mean = sum/entryAmnt
+    return "Mean "+key+" is "+str(mean)
+>>>>>>> e067ed19fee70a8808d0f462d8a50433f0a86190
 
-def histoPlot(g):
-    mean =calcMean(g)
-    xVals = []
+def calcMedian(key):
+    inOrder = []
     for i in data:
-        xVals.append(i[g])
-    plt.hist(xVals)
-    plt.title(mean)
-    plt.ylabel('Amount of People')
-    plt.xlabel(g)
-    plt.show()
-
+        inOrder.append(i[key])
+    inOrder.sort()
+    median = 0
+    print(len(inOrder))
+    if(len(inOrder) % 2 == 0): #if list amount is even
+        median = inOrder[int(len(inOrder)/2)]
+        #middle2 = middle1 + 1
+        #median = (middle1+middle2)/2
+    elif(not len(inOrder) % 2 == 0): #if list amount is odd
+        median = inOrder[int((len(inOrder) + 1)/2)]
+    return "Median of "+key+" is "+str(median)
+        
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
@@ -215,13 +207,28 @@ print ('Underweights:',under
         '\nOverweight:',over,
         '\nObese',obs)
 
+def histoPlot(g):
+    mean =calcMean(g)
+    xVals = []
+    for i in data:
+        xVals.append(i[g])
+    plt.hist(xVals)
+    plt.title(mean)
+    plt.ylabel('Amount of People')
+    plt.xlabel(g)
+    plt.show()
+
 histoPlot('Weight(Pounds)')
 histoPlot('Weight(Kilograms)')
 histoPlot('Height(Centimeters)')
 histoPlot('Height(Inches)')
 histoPlot('BMI')
+
+
 print(reportRowsColumns())
 print(calcMean('BMI'))
+print(calcMedian('BMI'))
+
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
 writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
