@@ -18,6 +18,7 @@ norm=0
 over=0
 obs=0
 
+
 #convert values to integer:
 '''for i in data:
     if i['Age'] == '' or i['Age']== 'nan':
@@ -162,6 +163,19 @@ def calcMean(key):
             return "Value must only contain numbers, not text"
         mean = round((sum/entryAmnt),2)
     return "Mean "+key+" : "+str(mean)
+
+def scatterPlot(g ,l ):
+    xVals=[]
+    yVals=[]
+    for i in data:
+        xVals.append(i[g])
+        yVals.append(i[l])
+    plt.scatter(xVals,yVals, color='purple', marker='o')
+    plt.ylabel(l)
+    plt.xlabel(g)
+    plt.show()
+
+
 
 
 def histoPlot(g):
