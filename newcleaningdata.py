@@ -1,5 +1,6 @@
 import csv
 import math
+from typing import List
 import matplotlib.pyplot as plt
 
 data = []
@@ -146,7 +147,7 @@ def calcMean(key):
             return "Value must only contain numbers, not text"
         mean = round((sum/entryAmnt),2)
 
-    return "Mean "+key+" is "+str(mean)
+    return mean
 
 def calcMedian(key):
     inOrder = []
@@ -161,8 +162,33 @@ def calcMedian(key):
         #median = (middle1+middle2)/2
     elif(not len(inOrder) % 2 == 0): #if list amount is odd
         median = inOrder[int((len(inOrder) + 1)/2)]
-    return "Median of "+key+" is "+str(median)
-        
+    return median
+
+def findMinMax(key, minMax):
+    listOfValues = []
+    for i in data:
+        listOfValues.append(i[key])
+    listOfValues.sort()
+    if(minMax == "Min"):
+        return "Min of "+key+" is: "+str(listOfValues[0])
+    elif(minMax == "Max"):
+        return "Max of "+key+" is: "+str(listOfValues[len(listOfValues) - 1])
+
+def calcStandardDeviation(key):
+    mean = calcMean(key)
+    listOfValues = []
+    for i in data:
+        listOfValues.append(i[key])
+    for value in listOfValues:
+        value -= mean
+        value *= value
+    sum = 0
+    for value in listOfValues:
+        sum += value
+    sum = sum/len(listOfValues) - 1
+    stDev = math.sqrt(sum)
+    return str(stDev)[:4]
+
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
@@ -214,7 +240,8 @@ def scatterPlot(g,l):
     plt.show()
 
 def BMIbar(g):
-    xVals=[]
+
+    xVals=['Underweight','Normal','Overweight','Obese']
     yVals=[]
     underList =[]
     normList=[]
@@ -230,7 +257,24 @@ def BMIbar(g):
             overList.append(i[g])
         elif(BMI >= 30):
             obsList.append(i[g])
-
+    Lists= [underList,normList,overList,obsList]
+    for x in Lists:
+        total= 0
+        length=0
+        for p in x:
+            total= total+p
+            length += 1
+        if length ==0:
+            avg =0
+        else:
+            avg= round((total/length),2)
+        yVals.append(avg)
+    plt.bar(xVals,yVals)
+    plt.title('Average '+g+' in BMI catagories')
+    plt.ylabel('Average '+g)
+    plt.xlabel('BMI category')
+    plt.show()
+   
     
 
 '''
@@ -245,12 +289,17 @@ scatterPlot('Height(Centimeters)','Weight(Kilograms)')
 '''
 
     
-
-
+BMIbar('Weight(Pounds)')
+BMIbar('Weight(Kilograms)')
+BMIbar('Height(Centimeters)')
+BMIbar('Height(Inches)')
 
 print(reportRowsColumns())
-print(calcMean('BMI'))
-print(calcMedian('BMI'))
+print("Mean BMI is: "+str(calcMean('BMI')))
+print("Median BMI is: "+str(calcMedian('BMI')))
+print(findMinMax('Height(Inches)', 'Min'))
+print(findMinMax('Height(Inches)', 'Max'))
+print("Standard Deviation of BMI is: "+str(calcStandardDeviation('BMI')))
 
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
