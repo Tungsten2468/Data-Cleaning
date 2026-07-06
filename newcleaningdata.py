@@ -12,6 +12,10 @@ for entry in fileRead:
 
 dataFile.close()
 
+under =0
+norm=0
+over=0
+obs=0
 
 #convert values to integer:
 '''for i in data:
@@ -112,10 +116,7 @@ def poundToKg(valueToConvert):
 def calcBMI(height, weight):
     bmi = float(weight) / ((float(height) / 100) * (float(height) / 100))
     return bmi
-under =0
-norm=0
-over=0
-obs=0
+
 def categorizeBMI(BMI):
     category = ""
     global under,norm,over,obs
@@ -143,7 +144,8 @@ def calcMean(key):
             entryAmnt += 1
         except:
             return "Value must only contain numbers, not text"
-        mean = sum/entryAmnt
+        mean = round((sum/entryAmnt),2)
+
     return "Mean "+key+" is "+str(mean)
 
 def calcMedian(key):
@@ -204,10 +206,32 @@ def scatterPlot(g,l):
     for i in data:
         xVals.append(i[g])
         yVals.append(i[l])   
+    x = str(len(xVals))
     plt.scatter(xVals,yVals,color='purple',alpha=0.1, marker='o') 
+    plt.title('Amount of people:'+ x )
     plt.ylabel(l)
     plt.xlabel(g)
     plt.show()
+
+def BMIbar(g):
+    xVals=[]
+    yVals=[]
+    underList =[]
+    normList=[]
+    overList=[]
+    obsList=[]
+    for i in data:
+        BMI = i['BMI']
+        if(BMI < 18.5):
+            underList.append(i[g])
+        elif(BMI >= 18.5 or BMI <= 24.9):
+            normList.append(i[g])
+        elif(BMI >= 25.0 or BMI <= 29.9):
+            overList.append(i[g])
+        elif(BMI >= 30):
+            obsList.append(i[g])
+
+    
 
 '''
 histoPlot('Weight(Pounds)')
@@ -219,6 +243,8 @@ histoPlot('BMI')
 scatterPlot('Height(Inches)','Weight(Pounds)')
 scatterPlot('Height(Centimeters)','Weight(Kilograms)')
 '''
+
+    
 
 
 
