@@ -160,7 +160,17 @@ def calcMedian(key):
     elif(not len(inOrder) % 2 == 0): #if list amount is odd
         median = inOrder[int((len(inOrder) + 1)/2)]
     return "Median of "+key+" is "+str(median)
-        
+
+def findMinMax(key, minMax):
+    listOfValues = []
+    for i in data:
+        listOfValues.append(i[key])
+    listOfValues.sort()
+    if(minMax == "Min"):
+        return "Min of "+key+" is: "+str(listOfValues[0])
+    elif(minMax == "Max"):
+        return "Max of "+key+" is: "+str(listOfValues[len(listOfValues) - 1])
+
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
 newColumn("BMI")
@@ -225,6 +235,8 @@ scatterPlot('Height(Centimeters)','Weight(Kilograms)')
 print(reportRowsColumns())
 print(calcMean('BMI'))
 print(calcMedian('BMI'))
+print(findMinMax('Height(Inches)', 'Min'))
+print(findMinMax('Height(Inches)', 'Max'))
 
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
