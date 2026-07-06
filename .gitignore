@@ -3,4 +3,6 @@ output_data
 .vscode
 olddatacleaning.py
 cleanedmedical.csv
+b_input_data
+b_databases
 venv

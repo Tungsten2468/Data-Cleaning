@@ -1,19 +1,19 @@
 import _sqlite3 as SQ
-import csv
+import pandas as pan
+import os
 
-data = []
-fileName = "heightweight.csv"
-dataFile = open("input_data/"+fileName, newline="")
-fileRead = csv.DictReader(dataFile)
+files = os.listdir("b_input_data")
+
+for file in files:
+    dataConnect = SQ.connect("b_databases/"+file[:-3]+'.sqlite')
+    curs = dataConnect.cursor()
+    
+    #curs.execute("CREATE TABLE ")
+
+    fileName = "olist_customers_dataset.csv"
+    fileRead = pan.read_csv("input_data/"+fileName)
+
+print(fileRead)
 
 
 
-
-
-newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
-writtenCSV = csv.DictWriter(newCSV, fieldnames=fileRead.fieldnames)
-dataFile.close()
-writtenCSV.writeheader()
-for entry in data:
-    writtenCSV.writerow(entry)
-newCSV.close()
