@@ -5,4 +5,5 @@ olddatacleaning.py
 cleanedmedical.csv
 b_input_data
 b_databases
+b_output_data
 venv
