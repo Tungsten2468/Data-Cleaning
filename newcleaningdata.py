@@ -13,18 +13,10 @@ for entry in fileRead:
 
 dataFile.close()
 
-under =0
-norm=0
+under=0
+norm =0
 over=0
-obs=0
-
-#convert values to integer:
-'''for i in data:
-    if i['Age'] == '' or i['Age']== 'nan':
-        i['Age']= 'N/A'
-    else:
-        x = int(float(i['Age']))
-        i['Age']= x'''
+obs =0
 
 #handle all empty cells:
 for i in data:
@@ -70,15 +62,6 @@ for i in data:
         print("ignoring duplicate ",dataToAdd)
 
 data = filteredData
-
-#fix binary values
-def checkFirstChar(word):
-    if(len(word) > 0):
-        if(word[0] == 'y' or word[0] == 'Y' or word[0] == '1'):
-            return "Yes"
-        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0" and word[0] != 'N/A'):
-            return "No"
-    return "N/A"
 
 def demicalfix(valueToFix):
     valueToFix = float(valueToFix)
@@ -187,7 +170,7 @@ def calcStandardDeviation(key):
         sum += value
     sum = sum/len(listOfValues) - 1
     stDev = math.sqrt(sum)
-    return str(stDev)[:4]
+    return str(round(stDev, 2))
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
