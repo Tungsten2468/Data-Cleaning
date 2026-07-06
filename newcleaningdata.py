@@ -51,6 +51,7 @@ def isDupe(comparing):
     for e in filteredData:
         compValues = list(e.values())
         if compValues[1:] == comparing:
+            print('tru')
             return True
         else:
             return False
@@ -199,13 +200,13 @@ print ('Underweights:',under
         '\nObese',obs)
 
 def histoPlot(g):
-    mean =calcMean(g)
     xVals = []
     for i in data:
         xVals.append(i[g])
+    
     plt.hist(xVals)
     plt.title('Histogram of '+ g)
-    plt.ylabel('Amount of People')
+    plt.ylabel('Amount of Patients')
     plt.xlabel(g)
     plt.show()
 
@@ -258,6 +259,7 @@ def BMIbar(g):
     plt.xlabel('BMI category')
     plt.show()
 
+histoPlot('BMI')
 
 
 '''
