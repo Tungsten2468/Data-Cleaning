@@ -258,9 +258,6 @@ def BMIbar(g):
     plt.xlabel('BMI category')
     plt.show()
    
-    
-
-'''
 histoPlot('Weight(Pounds)')
 histoPlot('Weight(Kilograms)')
 histoPlot('Height(Centimeters)')
@@ -269,9 +266,7 @@ histoPlot('BMI')
 
 scatterPlot('Height(Inches)','Weight(Pounds)')
 scatterPlot('Height(Centimeters)','Weight(Kilograms)')
-'''
 
-    
 BMIbar('Weight(Pounds)')
 BMIbar('Weight(Kilograms)')
 BMIbar('Height(Centimeters)')
