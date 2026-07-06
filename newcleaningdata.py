@@ -259,10 +259,6 @@ def BMIbar(g):
     plt.xlabel('BMI category')
     plt.show()
 
-histoPlot('BMI')
-
-
-'''
 histoPlot('Weight(Pounds)')
 histoPlot('Weight(Kilograms)')
 histoPlot('Height(Centimeters)')
@@ -278,7 +274,7 @@ BMIbar('Weight(Pounds)')
 BMIbar('Weight(Kilograms)')
 BMIbar('Height(Centimeters)')
 BMIbar('Height(Inches)')
-'''
+
 print(reportRowsColumns())
 print("Mean BMI is: "+str(calcMean('BMI')))
 print("Median BMI is: "+str(calcMedian('BMI')))
