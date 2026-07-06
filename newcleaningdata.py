@@ -144,7 +144,7 @@ def calcMean(key):
         except:
             return "Value must only contain numbers, not text"
         mean = sum/entryAmnt
-    return "Mean "+key+" is "+str(mean)
+    return mean
 
 def calcMedian(key):
     inOrder = []
@@ -159,7 +159,7 @@ def calcMedian(key):
         #median = (middle1+middle2)/2
     elif(not len(inOrder) % 2 == 0): #if list amount is odd
         median = inOrder[int((len(inOrder) + 1)/2)]
-    return "Median of "+key+" is "+str(median)
+    return median
 
 def findMinMax(key, minMax):
     listOfValues = []
@@ -170,6 +170,21 @@ def findMinMax(key, minMax):
         return "Min of "+key+" is: "+str(listOfValues[0])
     elif(minMax == "Max"):
         return "Max of "+key+" is: "+str(listOfValues[len(listOfValues) - 1])
+
+def calcStandardDeviation(key):
+    mean = calcMean(key)
+    listOfValues = []
+    for i in data:
+        listOfValues.append(i[key])
+    for value in listOfValues:
+        value -= mean
+        value *= value
+    sum = 0
+    for value in listOfValues:
+        sum += value
+    sum = sum/len(listOfValues) - 1
+    stDev = math.sqrt(sum)
+    return str(stDev)[:4]
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
@@ -233,10 +248,11 @@ scatterPlot('Height(Centimeters)','Weight(Kilograms)')
 
 
 print(reportRowsColumns())
-print(calcMean('BMI'))
-print(calcMedian('BMI'))
+print("Mean BMI is: "+str(calcMean('BMI')))
+print("Median BMI is: "+str(calcMedian('BMI')))
 print(findMinMax('Height(Inches)', 'Min'))
 print(findMinMax('Height(Inches)', 'Max'))
+print("Standard Deviation of BMI is: "+str(calcStandardDeviation('BMI')))
 
 
 newCSV = open("output_data/"+"clean"+fileName, "w", newline="")
