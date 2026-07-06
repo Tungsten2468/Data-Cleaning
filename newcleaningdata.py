@@ -204,7 +204,7 @@ def histoPlot(g):
     for i in data:
         xVals.append(i[g])
     plt.hist(xVals)
-    plt.title(mean)
+    plt.title('Histogram of '+ g)
     plt.ylabel('Amount of People')
     plt.xlabel(g)
     plt.show()
@@ -217,7 +217,7 @@ def scatterPlot(g,l):
         yVals.append(i[l])   
     x = str(len(xVals))
     plt.scatter(xVals,yVals,color='purple',alpha=0.1, marker='o') 
-    plt.title('Amount of people:'+ x )
+    plt.title(l +' vs. '+ g)
     plt.ylabel(l)
     plt.xlabel(g)
     plt.show()
@@ -257,7 +257,10 @@ def BMIbar(g):
     plt.ylabel('Average '+g)
     plt.xlabel('BMI category')
     plt.show()
-   
+
+
+
+'''
 histoPlot('Weight(Pounds)')
 histoPlot('Weight(Kilograms)')
 histoPlot('Height(Centimeters)')
@@ -267,11 +270,13 @@ histoPlot('BMI')
 scatterPlot('Height(Inches)','Weight(Pounds)')
 scatterPlot('Height(Centimeters)','Weight(Kilograms)')
 
+
+    
 BMIbar('Weight(Pounds)')
 BMIbar('Weight(Kilograms)')
 BMIbar('Height(Centimeters)')
 BMIbar('Height(Inches)')
-
+'''
 print(reportRowsColumns())
 print("Mean BMI is: "+str(calcMean('BMI')))
 print("Median BMI is: "+str(calcMedian('BMI')))
