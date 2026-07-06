@@ -12,15 +12,6 @@ for entry in fileRead:
 
 dataFile.close()
 
-
-#convert values to integer:
-'''for i in data:
-    if i['Age'] == '' or i['Age']== 'nan':
-        i['Age']= 'N/A'
-    else:
-        x = int(float(i['Age']))
-        i['Age']= x'''
-
 #handle all empty cells:
 for i in data:
     keys = list(i.keys())
@@ -65,15 +56,6 @@ for i in data:
         print("ignoring duplicate ",dataToAdd)
 
 data = filteredData
-
-#fix binary values
-def checkFirstChar(word):
-    if(len(word) > 0):
-        if(word[0] == 'y' or word[0] == 'Y' or word[0] == '1'):
-            return "Yes"
-        elif(word[0] == 'n' or word[0] == 'N' or word[0] == "0" and word[0] != 'N/A'):
-            return "No"
-    return "N/A"
 
 def demicalfix(valueToFix):
     valueToFix = float(valueToFix)
@@ -144,7 +126,7 @@ def calcMean(key):
         except:
             return "Value must only contain numbers, not text"
         mean = sum/entryAmnt
-    return mean
+    return round(mean,2)
 
 def calcMedian(key):
     inOrder = []
@@ -184,7 +166,7 @@ def calcStandardDeviation(key):
         sum += value
     sum = sum/len(listOfValues) - 1
     stDev = math.sqrt(sum)
-    return str(stDev)[:4]
+    return str(round(stDev, 2))
 
 newColumn("Height(Centimeters)")
 newColumn("Weight(Kilograms)")
@@ -233,19 +215,6 @@ def scatterPlot(g,l):
     plt.ylabel(l)
     plt.xlabel(g)
     plt.show()
-
-'''
-histoPlot('Weight(Pounds)')
-histoPlot('Weight(Kilograms)')
-histoPlot('Height(Centimeters)')
-histoPlot('Height(Inches)')
-histoPlot('BMI')
-
-scatterPlot('Height(Inches)','Weight(Pounds)')
-scatterPlot('Height(Centimeters)','Weight(Kilograms)')
-'''
-
-
 
 print(reportRowsColumns())
 print("Mean BMI is: "+str(calcMean('BMI')))
