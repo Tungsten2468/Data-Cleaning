@@ -75,19 +75,21 @@ def crossReference(itemToCompare, table, columnID, returnValueID):
 
 
 query = """
-    SELECT *
-    FROM olist_customers_dataset
-    JOIN olist_orders_dataset 
-      ON olist_customers_dataset.customer_id = olist_orders_dataset.customer_id
+    SELECT 
+    FROM olist_order_items_dataset i
+    JOIN olist_sellers_dataset p 
+        ON i.product_id = p.product_id
+    JOIN product_category_name_translation t 
+        ON p.product_category_name = t.product_category_name
+    GROUP BY p.price
+    ORDER BY sales_count DESC
+    LIMIT ?
 """
-
-df = pan.read_sql(query,dataConnect)
 
 #print(df)
 #print("Amount of customers in dataset: "+str(getAmount(tables[0])))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-print("Top 10 Products of all time: "+str(getTop(tables[4], "payment_value", 10)))
 
 '''
 #get amount of customers in database
