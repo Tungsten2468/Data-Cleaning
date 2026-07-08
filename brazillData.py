@@ -73,6 +73,14 @@ queryOrders = '''SELECT
                 FROM olist_order_items_dataset i
                 '''
 
+queryCities = '''SELECT
+                    i.customer_city, COUNT(i.customer_id) AS c
+                FROM olist_customers_dataset i
+                GROUP BY i.customer_city
+                ORDER BY c DESC
+                LIMIT ?
+                '''
+
 #------------------FUNCTIONS-------------------
 def getAmount(query): #just counts entires
     amount = 0
@@ -95,6 +103,11 @@ def viewQuery(whatQuery, lim): #prints the query for easy viewing/debugging
     print(headers)
     for row in rows:
         print(row)
+    
+def getMostAmountInCategory(whatQuery): #query must sort in ascending
+    qu = curs.execute(whatQuery)
+    qu = noTuple(qu)
+    return qu[len(qu)-1]
 
 def getAverage(whatQuery): #find average of something
     qu = curs.execute(whatQuery)
@@ -133,9 +146,12 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print("Amount of customers in dataset: "+str(getAmount(tables[0])))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
-getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
-print("Average Order Value: "+getAverage(queryOrders))
+#print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
+#getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
+#print("Average Order Value: "+getAverage(queryOrders))
+#print("City with most customers: "+getMostAmountInCategory(queryCities))
+print(getTop10(queryCities, "City", "Customers", 0, 1))
+
 
 
 '''
