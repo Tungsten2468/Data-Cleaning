@@ -1,7 +1,7 @@
 import _sqlite3 as SQ
-#import sqlalchemy
 import pandas as pan
 import os
+import matplotlib.pyplot as mat
 
 tables = []
 #indexes of tables:
@@ -81,6 +81,36 @@ queryCities = '''SELECT
                 LIMIT ?
                 '''
 
+queryOrderStatus = '''SELECT
+                        i.order_status, COUNT(*) AS c
+                    FROM olist_orders_dataset i
+                    GROUP BY i.order_status
+                    ORDER BY c DESC
+                    LIMIT ?'''
+
+queryReviews = '''SELECT
+                    i.seller_id, i.order_id, ROUND(AVG(e.review_score)) AS review_avg
+                FROM olist_order_items_dataset i
+                JOIN olist_order_reviews_dataset e
+                    ON i.order_id = e.order_id
+                GROUP BY i.seller_id
+                    LIMIT ?
+                '''
+
+queryHighSpending = '''SELECT
+                        i.customer_id, i.order_id, e.payment_value
+                    FROM olist_orders_dataset i
+                    JOIN olist_order_payments_dataset e
+                        ON i.order_id = e.order_id
+                    ORDER BY e.payment_value ASC
+                    '''
+
+queryOrderEachMonth = '''SELECT
+                            SUBSTR(i.order_purchase_timestamp, 6, 2) AS month, COUNT(i.order_id)
+                        FROM olist_orders_dataset i
+                        GROUP BY month
+                        '''
+
 #------------------FUNCTIONS-------------------
 def getAmount(query): #just counts entires
     amount = 0
@@ -89,7 +119,7 @@ def getAmount(query): #just counts entires
     return amount
 
 def noTuple(whatQuery): #makes the query not a tuple for easy use
-    tupless = [row[0] for row in whatQuery]
+    tupless = [row for row in whatQuery]
     return tupless
 
 #-1 = no limit
@@ -104,10 +134,10 @@ def viewQuery(whatQuery, lim): #prints the query for easy viewing/debugging
     for row in rows:
         print(row)
     
-def getMostAmountInCategory(whatQuery): #query must sort in ascending
+def getMostAmountInCategory(whatQuery, val1ID, val2ID): #query must be ordered in ascending
     qu = curs.execute(whatQuery)
     qu = noTuple(qu)
-    return qu[len(qu)-1]
+    return str(qu[len(qu)-1][val1ID])+", "+str(qu[len(qu)-1][val2ID])
 
 def getAverage(whatQuery): #find average of something
     qu = curs.execute(whatQuery)
@@ -122,11 +152,11 @@ def getAverage(whatQuery): #find average of something
     avg = sum/amnt
     return str(avg)[0:6]
 
-def getTop10(whatQuery, var1, var2, item1, item2):
+def getTop(whatQuery, var1, var2, item1, item2, topNum):
     print("Top 10 "+var1+"(s) by "+var2+": ")
-    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
+    top = curs.execute(whatQuery, (topNum,)).fetchall()
     num =0 
-    for item in top_10_products:
+    for item in top:
         num +=1
         print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
 
@@ -146,12 +176,16 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print("Amount of customers in dataset: "+str(getAmount(tables[0])))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-#print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
-#getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
+#print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
+#getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10)
 #print("Average Order Value: "+getAverage(queryOrders))
-#print("City with most customers: "+getMostAmountInCategory(queryCities))
-print(getTop10(queryCities, "City", "Customers", 0, 1))
-
+#print("City with most customers: "+getMostAmountInCategory(queryCities, 0, 1))
+#print(getTop(queryCities, "City", "Customers", 0, 1, 10))
+#print(viewQuery(queryOrderStatus, 8)) #get how many orders in a specific category
+#print(viewQuery(queryReviews, 50)) #get the average review score of all sellers
+#print(viewQuery(queryHighSpending, 50))
+#print("Highest Spender(Customer ID): "+str(getMostAmountInCategory(queryHighSpending, 0, 2))) 
+#print("Orders placed each month: "+str(viewQuery(queryOrderEachMonth, -1))) #orders made each month
 
 
 '''
