@@ -39,7 +39,7 @@ def getAmount(table):
         amount += 1
     return amount
 
-query = """
+queryProducts = """
     SELECT 
         t.product_category_name_english,
         COUNT(i.product_id) as sales_count
@@ -52,13 +52,36 @@ query = """
     ORDER BY sales_count DESC
     LIMIT ?
 """
+querySellers = '''SELECT
+                    i.seller_id, i.order_id, p.payment_value
+                FROM olist_order_items_dataset i
+                JOIN olist_order_payments_dataset p
+                    ON i.order_id = p.order_id
+                GROUP BY p.order_id
+                ORDER BY p.payment_value DESC
+                LIMIT ?
+                '''
 
-# Run it directly
-top_10_products = curs.execute(query, (10,)).fetchall()
-num =0 
-for item in top_10_products:
-    num +=1
-    print(num,f"Product Category: {item[0]} | Sales: {item[1]}")
+def viewQuery(whatQuery):
+    rows = curs.execute(whatQuery, (10,)).fetchall()
+    headers = [desc[0] for desc in curs.description]
+
+    print(headers)
+    for row in rows:
+        print(row)
+
+#viewQuery(querySellers)
+
+def getTop10(whatQuery, var1, var2, item1, item2):
+    print("Top 10 "+var1+"(s) by "+var2+": ")
+    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
+    num =0 
+    for item in top_10_products:
+        num +=1
+        print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
+
+print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
+getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
 
 #customerIDS = fileRead.groupby (['customer_id','product_id'])['order_id'].max().reset_index()
 
