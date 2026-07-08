@@ -14,12 +14,12 @@ tables = []
 #table 6 = products
 #table 7 = sellers
 #table 8 = product category name translation
-files = os.listdir("b_input_data")
-dataConnect = SQ.connect("b_output_data/brazilian_data_db.sqlite")
+files = os.listdir("input_data")
+dataConnect = SQ.connect("output_data/brazilian_data_db.sqlite")
 curs = dataConnect.cursor()
 
 for file in files:
-    fileRead = pan.read_csv("b_input_data/"+file)
+    fileRead = pan.read_csv("input_data/"+file)
     cols = ""
     for header in fileRead.columns: #only add commas if the header is not the last one
         if(fileRead.columns.get_loc(header) != len(fileRead.columns)-1):
@@ -87,7 +87,6 @@ df = pan.read_sql(query,dataConnect)
 #print("Amount of customers in dataset: "+str(getAmount(tables[0])))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-print("Top 10 Products of all time: "+str(getTop(tables[4], "payment_value", 10)))
 
 '''
 #get amount of customers in database
