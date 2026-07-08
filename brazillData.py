@@ -18,6 +18,7 @@ files = os.listdir("b_input_data")
 dataConnect = SQ.connect("b_output_data/brazilian_data_db.sqlite")
 curs = dataConnect.cursor()
 
+#------------------PREP-------------------
 for file in files:
     fileRead = pan.read_csv("b_input_data/"+file)
     cols = ""
@@ -32,12 +33,18 @@ for file in files:
     curs.execute(f" DROP TABLE IF EXISTS {tableName}")
     curs.execute(f"CREATE TABLE {tableName} ({cols})")
     fileRead.to_sql(tableName, dataConnect, if_exists="append", index=False)
-
-def getAmount(table):
-    amount = 0
-    for entry in curs.execute("SELECT * FROM "+table):
-        amount += 1
-    return amount
+#------------------QUERIES-------------------
+query = """
+    SELECT 
+    FROM olist_order_items_dataset i
+    JOIN olist_sellers_dataset p 
+        ON i.product_id = p.product_id
+    JOIN product_category_name_translation t 
+        ON p.product_category_name = t.product_category_name
+    GROUP BY p.price
+    ORDER BY sales_count DESC
+    LIMIT ?
+"""
 
 queryProducts = """
     SELECT 
@@ -61,16 +68,46 @@ querySellers = '''SELECT
                 ORDER BY p.payment_value DESC
                 LIMIT ?
                 '''
+queryOrders = '''SELECT
+                    i.price
+                FROM olist_order_items_dataset i
+                '''
 
-def viewQuery(whatQuery):
-    rows = curs.execute(whatQuery, (10,)).fetchall()
+#------------------FUNCTIONS-------------------
+def getAmount(query): #just counts entires
+    amount = 0
+    for entry in curs.execute(query):
+        amount += 1
+    return amount
+
+def noTuple(whatQuery): #makes the query not a tuple for easy use
+    tupless = [row[0] for row in whatQuery]
+    return tupless
+
+#-1 = no limit
+def viewQuery(whatQuery, lim): #prints the query for easy viewing/debugging
+    if(lim != -1):
+        rows = curs.execute(whatQuery, (lim,)).fetchall()
+    else:
+        rows = curs.execute(whatQuery).fetchall()
     headers = [desc[0] for desc in curs.description]
 
     print(headers)
     for row in rows:
         print(row)
 
-#viewQuery(querySellers)
+def getAverage(whatQuery): #find average of something
+    qu = curs.execute(whatQuery)
+    qu = noTuple(qu)
+    values = []
+    for entry in qu:
+        values.append(int(entry))
+    sum = 0
+    for val in values:
+        sum += val
+    amnt = getAmount(whatQuery)
+    avg = sum/amnt
+    return str(avg)[0:6]
 
 def getTop10(whatQuery, var1, var2, item1, item2):
     print("Top 10 "+var1+"(s) by "+var2+": ")
@@ -80,39 +117,26 @@ def getTop10(whatQuery, var1, var2, item1, item2):
         num +=1
         print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
 
-print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
-getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
-
-#customerIDS = fileRead.groupby (['customer_id','product_id'])['order_id'].max().reset_index()
-
-#customerIDS.to_sql('customerIDS',dataConnect)
-
-def crossReference(itemToCompare, table, columnID, returnValueID):
+'''
+def crossReference(itemToCompare, table, columnID, returnValueID): #connect values to other values that are spread across different tables
     allEntries = list(curs.execute("SELECT * FROM " + table))
     reference = [row[columnID] for row in allEntries]
     for i in reference:
         if(itemToCompare == i):
             match = allEntries[reference.index(i)][returnValueID]
             return match
-    return "No matches found"
+    return "No matches found"'''
 
-
-query = """
-    SELECT 
-    FROM olist_order_items_dataset i
-    JOIN olist_sellers_dataset p 
-        ON i.product_id = p.product_id
-    JOIN product_category_name_translation t 
-        ON p.product_category_name = t.product_category_name
-    GROUP BY p.price
-    ORDER BY sales_count DESC
-    LIMIT ?
-"""
+#------------------CALLS-------------------
 
 #print(df)
 #print("Amount of customers in dataset: "+str(getAmount(tables[0])))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
+print(getTop10(queryProducts, "Product Category", "Sales", 0, 1))
+getTop10(querySellers, "Seller ID", "Revenue",0 , 2)
+print("Average Order Value: "+getAverage(queryOrders))
+
 
 '''
 #get amount of customers in database
