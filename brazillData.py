@@ -1,12 +1,9 @@
 import _sqlite3 as SQ
 import pandas as pan
 import os
-<<<<<<< HEAD
 import matplotlib.pyplot as plt 
 
-=======
-import matplotlib.pyplot as mat
->>>>>>> 5740d175e094c43cefe5ba60cc5aae72442cc328
+
 
 tables = []
 #indexes of tables:
@@ -178,6 +175,7 @@ def barGraph(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
+
 '''
 def crossReference(itemToCompare, table, columnID, returnValueID): #connect values to other values that are spread across different tables
     allEntries = list(curs.execute("SELECT * FROM " + table))
@@ -197,22 +195,12 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
 #getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10)
 #print("Average Order Value: "+getAverage(queryOrders))
-<<<<<<< HEAD
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
 #getTop10(queryCities, "City", "Customers", 0, 1)
 barGraph(queryCities, "City", "Customers", 0, 1)
 barGraph(querySellers,"Seller ID", "Revenue",0,2)
 
 
-=======
-#print("City with most customers: "+getMostAmountInCategory(queryCities, 0, 1))
-#print(getTop(queryCities, "City", "Customers", 0, 1, 10))
-#print(viewQuery(queryOrderStatus, 8)) #get how many orders in a specific category
-#print(viewQuery(queryReviews, 50)) #get the average review score of all sellers
-#print(viewQuery(queryHighSpending, 50))
-#print("Highest Spender(Customer ID): "+str(getMostAmountInCategory(queryHighSpending, 0, 2))) 
-#print("Orders placed each month: "+str(viewQuery(queryOrderEachMonth, -1))) #orders made each month
->>>>>>> 5740d175e094c43cefe5ba60cc5aae72442cc328
 
 
 '''
