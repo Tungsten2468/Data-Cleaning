@@ -3,6 +3,8 @@ import pandas as pan
 import os
 import matplotlib.pyplot as plt 
 
+
+
 tables = []
 #indexes of tables:
 #table 0 = customers
@@ -60,12 +62,12 @@ queryProducts = """
     LIMIT ?
 """
 querySellers = '''SELECT
-                    i.seller_id, i.order_id, SUM(p.payment_value) AS totalMoney
+                    i.seller_id, i.order_id, p.payment_value
                 FROM olist_order_items_dataset i
                 JOIN olist_order_payments_dataset p
                     ON i.order_id = p.order_id
-                GROUP BY i.seller_id
-                ORDER BY totalMoney DESC
+                GROUP BY p.order_id
+                ORDER BY p.payment_value DESC
                 LIMIT ?
                 '''
 queryOrders = '''SELECT
@@ -187,7 +189,7 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.plot(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
-    plt.title("Order Volume by Month")
+    plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
 def pieChart(whatQuery, var1, var2, item1, item2):
@@ -198,7 +200,7 @@ def pieChart(whatQuery, var1, var2, item1, item2):
         x.append(item[item1])
         y.append(item[item2])
     plt.pie(y)
-    plt.legend(x,title='status', loc="best")
+    plt.legend(x,title='status', loc="upper left")
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
@@ -222,21 +224,14 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10)
 #print("Average Order Value: "+getAverage(queryOrders))
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
-#getTop(queryCities, "City", "Customers", 0, 1, 10)
+#getTop10(queryCities, "City", "Customers", 0, 1)
 
-barGraph(queryCities, "City", "Customers", 0, 1)
-barGraph(querySellers,"Seller ID", "Revenue",0,2)
-barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+#barGraph(queryCities, "City", "Customers", 0, 1)
+#barGraph(querySellers,"Seller ID", "Revenue",0,2)
+#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
-<<<<<<< HEAD
-barGraph(queryCities, "City", "Customers", 0, 1)
-barGraph(querySellers,"Seller ID", "Revenue",0,2)
-barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
-=======
->>>>>>> 2c426f3bc10e8fc22d0d1d39891021a3f8ae9dfd
-
-lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
+#lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
 '''
