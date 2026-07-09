@@ -14,13 +14,13 @@ tables = []
 #table 6 = products
 #table 7 = sellers
 #table 8 = product category name translation
-files = os.listdir("input_data")
-dataConnect = SQ.connect("output_data/brazilian_data_db.sqlite")
+files = os.listdir("b_input_data")
+dataConnect = SQ.connect("b_output_data/brazilian_data_db.sqlite")
 curs = dataConnect.cursor()
 
 #------------------PREP-------------------
 for file in files:
-    fileRead = pan.read_csv("input_data/"+file)
+    fileRead = pan.read_csv("b_input_data/"+file)
     cols = ""
     for header in fileRead.columns: #only add commas if the header is not the last one
         if(fileRead.columns.get_loc(header) != len(fileRead.columns)-1):
@@ -173,6 +173,7 @@ def barGraph(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
+
 '''
 def crossReference(itemToCompare, table, columnID, returnValueID): #connect values to other values that are spread across different tables
     allEntries = list(curs.execute("SELECT * FROM " + table))
@@ -198,14 +199,6 @@ barGraph(queryCities, "City", "Customers", 0, 1)
 barGraph(querySellers,"Seller ID", "Revenue",0,2)
 
 
-
-#print("City with most customers: "+getMostAmountInCategory(queryCities, 0, 1))
-#print(getTop(queryCities, "City", "Customers", 0, 1, 10))
-#print(viewQuery(queryOrderStatus, 8)) #get how many orders in a specific category
-#print(viewQuery(queryReviews, 50)) #get the average review score of all sellers
-#print(viewQuery(queryHighSpending, 50))
-#print("Highest Spender(Customer ID): "+str(getMostAmountInCategory(queryHighSpending, 0, 2))) 
-#print("Orders placed each month: "+str(viewQuery(queryOrderEachMonth, -1))) #orders made each month
 
 
 '''
