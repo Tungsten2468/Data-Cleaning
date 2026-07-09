@@ -89,7 +89,7 @@ queryReviews = '''SELECT
                 JOIN olist_order_reviews_dataset e
                     ON i.order_id = e.order_id
                 GROUP BY i.seller_id
-                    LIMIT ?
+                LIMIT?
                 '''
 
 queryHighSpending = '''SELECT
@@ -197,11 +197,15 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print("Amount of orders in dataset: "+ str(curs.execute(queryOrderAmount).fetchone()[0]))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
-print(getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10))
-print("Average Order Value: "+str(curs.execute(queryOrderAvg).fetchone()[0]))
+#print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
+#print(getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10))
+#print("Average Order Value: "+str(curs.execute(queryOrderAvg).fetchone()[0]))
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
 #getTop(queryCities, "City", "Customers", 0, 1, 10)
+#print(viewQuery(queryOrderStatus, 8))
+#print(viewQuery(queryReviews, 50))
+#print(getMostAmountInCategory(queryHighSpending, 0, 2))
+print(viewQuery(queryOrderEachMonth, -1))
 
 #barGraph(queryCities, "City", "Customers", 0, 1)
 
