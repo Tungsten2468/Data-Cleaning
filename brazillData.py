@@ -167,8 +167,12 @@ def barGraph(whatQuery, var1, var2, item1, item2):
     x = []
     y = []
     for item in top_10_products:
-        x.append(item[item1])
-        y.append(item[item2])
+        if len(item[item1])>5:
+            x.append(item[item1][0:5]+"...")
+            y.append(item[item2])
+        else:
+            x.append(item[item1])
+            y.append(item[item2])
     plt.bar(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
@@ -195,7 +199,8 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     for item in top_10_products:
         x.append(item[item1])
         y.append(item[item2])
-    plt.pie(y, labels=x)
+    plt.pie(y)
+    plt.legend(x,title='status', loc="best")
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
@@ -221,9 +226,10 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
 #getTop10(queryCities, "City", "Customers", 0, 1)
 
-#barGraph(queryCities, "City", "Customers", 0, 1)
-#barGraph(querySellers,"Seller ID", "Revenue",0,2)
-#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+barGraph(queryCities, "City", "Customers", 0, 1)
+barGraph(querySellers,"Seller ID", "Revenue",0,2)
+barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+
 
 lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
