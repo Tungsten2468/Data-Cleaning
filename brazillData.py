@@ -60,12 +60,12 @@ queryProducts = """
     LIMIT ?
 """
 querySellers = '''SELECT
-                    i.seller_id, i.order_id, p.payment_value
+                    i.seller_id, i.order_id, SUM(p.payment_value) AS totalMoney
                 FROM olist_order_items_dataset i
                 JOIN olist_order_payments_dataset p
                     ON i.order_id = p.order_id
-                GROUP BY p.order_id
-                ORDER BY p.payment_value DESC
+                GROUP BY i.seller_id
+                ORDER BY totalMoney DESC
                 LIMIT ?
                 '''
 queryOrders = '''SELECT
@@ -183,7 +183,7 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.plot(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
-    plt.title("Top 10 "+var1+"(s) by "+var2)
+    plt.title("Order Volume by Month")
     plt.show()
 
 def pieChart(whatQuery, var1, var2, item1, item2):
@@ -217,11 +217,12 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10)
 #print("Average Order Value: "+getAverage(queryOrders))
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
-#getTop10(queryCities, "City", "Customers", 0, 1)
+#getTop(queryCities, "City", "Customers", 0, 1, 10)
 
-#barGraph(queryCities, "City", "Customers", 0, 1)
-#barGraph(querySellers,"Seller ID", "Revenue",0,2)
-#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+barGraph(queryCities, "City", "Customers", 0, 1)
+barGraph(querySellers,"Seller ID", "Revenue",0,2)
+barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+
 
 lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
