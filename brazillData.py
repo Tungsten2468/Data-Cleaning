@@ -16,13 +16,13 @@ tables = []
 #table 6 = products
 #table 7 = sellers
 #table 8 = product category name translation
-files = os.listdir("input_data")
-dataConnect = SQ.connect("output_data/brazilian_data_db.sqlite")
+files = os.listdir("b_input_data")
+dataConnect = SQ.connect("b_output_data/brazilian_data_db.sqlite")
 curs = dataConnect.cursor()
 
 #------------------PREP-------------------
 for file in files:
-    fileRead = pan.read_csv("input_data/"+file)
+    fileRead = pan.read_csv("b_input_data/"+file)
     cols = ""
     for header in fileRead.columns: #only add commas if the header is not the last one
         if(fileRead.columns.get_loc(header) != len(fileRead.columns)-1):
@@ -175,6 +175,29 @@ def barGraph(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
+def lineGraph(whatQuery, var1, var2, item1, item2):
+    top_10_products = curs.execute(whatQuery).fetchall()
+    x = []
+    y = []
+    for item in top_10_products:
+        x.append(item[item1])
+        y.append(item[item2])
+    plt.plot(x,y)
+    plt.xlabel(var1)
+    plt.ylabel(var2)
+    plt.title("Top 10 "+var1+"(s) by "+var2)
+    plt.show()
+
+def pieChart(whatQuery, var1, var2, item1, item2):
+    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
+    x = []
+    y = []
+    for item in top_10_products:
+        x.append(item[item1])
+        y.append(item[item2])
+    plt.pie(y, labels=x)
+    plt.title("Top 10 "+var1+"(s) by "+var2)
+    plt.show()
 
 '''
 def crossReference(itemToCompare, table, columnID, returnValueID): #connect values to other values that are spread across different tables
@@ -197,12 +220,14 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #print("Average Order Value: "+getAverage(queryOrders))
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
 #getTop10(queryCities, "City", "Customers", 0, 1)
-barGraph(queryCities, "City", "Customers", 0, 1)
-barGraph(querySellers,"Seller ID", "Revenue",0,2)
 
+#barGraph(queryCities, "City", "Customers", 0, 1)
+#barGraph(querySellers,"Seller ID", "Revenue",0,2)
+#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
+lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
-
+pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
 '''
 #get amount of customers in database
 peopleInDatabase = 0
