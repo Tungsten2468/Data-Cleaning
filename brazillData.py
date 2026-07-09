@@ -34,17 +34,12 @@ for file in files:
     curs.execute(f"CREATE TABLE {tableName} ({cols})")
     fileRead.to_sql(tableName, dataConnect, if_exists="append", index=False)
 #------------------QUERIES-------------------
-query = """
-    SELECT 
-    FROM olist_order_items_dataset i
-    JOIN olist_sellers_dataset p 
-        ON i.product_id = p.product_id
-    JOIN product_category_name_translation t 
-        ON p.product_category_name = t.product_category_name
-    GROUP BY p.price
-    ORDER BY sales_count DESC
-    LIMIT ?
-"""
+queryCustAmount = '''SELECT
+                    COUNT(DISTINCT i.customer_id) as c
+                    FROM olist_customers_dataset i'''
+queryOrderAmount = '''SELECT
+                    COUNT(i.order_id) as c
+                    FROM olist_orders_dataset i'''
 
 queryProducts = """
     SELECT 
@@ -68,8 +63,8 @@ querySellers = '''SELECT
                 ORDER BY totalMoney DESC
                 LIMIT ?
                 '''
-queryOrders = '''SELECT
-                    i.price
+queryOrderAvg = '''SELECT
+                    ROUND(AVG(i.price), 2)
                 FROM olist_order_items_dataset i
                 '''
 
@@ -139,19 +134,6 @@ def getMostAmountInCategory(whatQuery, val1ID, val2ID): #query must be ordered i
     qu = noTuple(qu)
     return str(qu[len(qu)-1][val1ID])+", "+str(qu[len(qu)-1][val2ID])
 
-def getAverage(whatQuery): #find average of something
-    qu = curs.execute(whatQuery)
-    qu = noTuple(qu)
-    values = []
-    for entry in qu:
-        values.append(int(entry))
-    sum = 0
-    for val in values:
-        sum += val
-    amnt = getAmount(whatQuery)
-    avg = sum/amnt
-    return str(avg)[0:6]
-
 def getTop(whatQuery, var1, var2, item1, item2, topNum):
     print("Top 10 "+var1+"(s) by "+var2+": ")
     top = curs.execute(whatQuery, (topNum,)).fetchall()
@@ -210,23 +192,26 @@ def crossReference(itemToCompare, table, columnID, returnValueID): #connect valu
 #------------------CALLS-------------------
 
 #print(df)
-#print("Amount of customers in dataset: "+str(getAmount(tables[0])))
+
+#print("Amount of customers in dataset: "+ str(curs.execute(queryCustAmount).fetchone()[0]))
+#print("Amount of orders in dataset: "+ str(curs.execute(queryOrderAmount).fetchone()[0]))
 #print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
 #print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-#print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
-#getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10)
-#print("Average Order Value: "+getAverage(queryOrders))
+print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
+print(getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10))
+print("Average Order Value: "+str(curs.execute(queryOrderAvg).fetchone()[0]))
 #print("City with most customers: "+getMostAmountInCategory(queryCities))
 #getTop(queryCities, "City", "Customers", 0, 1, 10)
 
-barGraph(queryCities, "City", "Customers", 0, 1)
-barGraph(querySellers,"Seller ID", "Revenue",0,2)
-barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
+#barGraph(queryCities, "City", "Customers", 0, 1)
+
+#barGraph(querySellers,"Seller ID", "Revenue",0,2)
+#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
 
-lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
+#lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
-pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
+#pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
 '''
 #get amount of customers in database
 peopleInDatabase = 0
