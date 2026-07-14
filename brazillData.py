@@ -4,8 +4,6 @@ from faker import Faker
 import os
 import matplotlib.pyplot as plt 
 
-
-
 tables = []
 #indexes of tables:
 #table 0 = customers
@@ -131,10 +129,50 @@ newtable = ''' SELECT
     GROUP BY o.order_id
     LIMIT ?
     '''
+queryMostCommonPM = '''SELECT
+                        i.payment_type, COUNT(*) AS paymentTCounts
+                        FROM olist_order_payments_dataset i
+                        GROUP BY i.payment_type
+                        ORDER BY paymentTCounts DESC
+                        LIMIT ?'''
+
+queryMostCommonStates = '''SELECT
+                        i.customer_state, COUNT(*) AS stateCounts
+                        FROM olist_customers_dataset i
+                        GROUP BY i.customer_state
+                        ORDER BY stateCounts DESC
+                        LIMIT ?'''
+
+queryReviewDist = '''SELECT
+                        i.review_score, COUNT(*) AS reviewScoreCount
+                        FROM olist_order_reviews_dataset i
+                        GROUP BY i.review_score
+                        ORDER BY reviewScoreCount DESC'''
+
+queryMeanPV = '''SELECT
+                    ROUND(AVG(i.product_value), 2) AS mean_product_value
+                    FROM new_table i
+                    '''
+queryMedianPV = '''SELECT
+                    i.product_value
+                    FROM new_table i
+                    ORDER BY i.product_value ASC'''
 
 #------------------FUNCTIONS-------------------
-def fixDeliveryDays(wrongValue, row):
-    return
+def calcMedian(query):
+    inOrder = []
+    for i in curs.execute(query).fetchall():
+        inOrder.append(i)
+    median = 0
+    print(len(inOrder))
+    if(len(inOrder) % 2 == 0): #if list amount is even
+        median = inOrder[int(len(inOrder)/2)]
+        #middle2 = middle1 + 1
+        #median = (middle1+middle2)/2
+    elif(not len(inOrder) % 2 == 0): #if list amount is odd
+        median = inOrder[int((len(inOrder) + 1)/2)]
+    return median
+
 def getAmount(query): #just counts entires
     amount = 0
     for entry in curs.execute(query):
@@ -213,7 +251,11 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     plt.show()
 
 #------------------CALLS-------------------
+print(viewQuery(queryMostCommonPM, 5))
+print(viewQuery(queryMostCommonStates, 50))
+print(viewQuery(queryReviewDist, -1))
 
+print(viewQuery(queryOrderEachMonth, -1))
 #print(df)
 '''
 print("Amount of customers in dataset: "+ str(curs.execute(queryCustAmount).fetchone()[0]))
@@ -287,10 +329,8 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(pp)
 dataConnect.commit()
 
-curs.execute("DETACH DATABASE external_db;")
-dataConnect.close()
-
-
+print(viewQuery(queryMeanPV, -1))
+print(calcMedian(queryMedianPV))
 
 temp_con = SQ.connect(new_db_path)
 df = pan.read_sql_query("SELECT * FROM new_table", temp_con)
