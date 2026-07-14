@@ -238,9 +238,9 @@ pp ='''CREATE TABLE IF NOT EXISTS external_db.new_table AS
 SELECT 
     i.customer_state,p.payment_type, 
     p.payment_installments, 
-    SUM(a.price) AS product_value, 
-    a.freight_value, 
-    p.payment_value AS total_payment, 
+    ROUND(SUM(a.price),2) AS product_value, 
+    ROUND(SUM(a.freight_value), 2) AS freight_value,  
+    ROUND(p.payment_value, 2) AS total_payment,
     r.review_score, 
     o.order_purchase_timestamp AS purchase_date, 
     CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
@@ -256,7 +256,26 @@ SELECT
     JOIN olist_order_payments_dataset p
         ON o.order_id = p.order_id
     WHERE o.order_status = 'delivered'
-    GROUP BY o.order_id'''
+
+
+        AND a.price >= 0 
+        AND a.freight_value >= 0
+        AND p.payment_value >= 0
+ 
+        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
+ 
+        AND o.order_delivered_customer_date IS NOT NULL
+    GROUP BY 
+    o.order_id,
+    i.customer_state,
+    p.payment_type,
+    p.payment_installments,
+    p.payment_value,
+    r.review_score,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date
+    ORDER BY purchase_date ASC
+    '''
 
 dest_folder = "syn_output_data" 
 new_db_path = os.path.join(dest_folder, "final_reports.db")
