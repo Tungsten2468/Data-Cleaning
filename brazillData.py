@@ -55,12 +55,12 @@ queryProducts = """
     LIMIT ?
 """
 querySellers = '''SELECT
-                    i.seller_id, i.order_id, SUM(p.payment_value) AS totalMoney
+                    i.seller_id, i.order_id, p.payment_value
                 FROM olist_order_items_dataset i
                 JOIN olist_order_payments_dataset p
                     ON i.order_id = p.order_id
-                GROUP BY i.seller_id
-                ORDER BY totalMoney DESC
+                GROUP BY p.order_id
+                ORDER BY p.payment_value DESC
                 LIMIT ?
                 '''
 queryOrderAvg = '''SELECT
@@ -147,8 +147,12 @@ def barGraph(whatQuery, var1, var2, item1, item2):
     x = []
     y = []
     for item in top_10_products:
-        x.append(item[item1])
-        y.append(item[item2])
+        if len(item[item1])>5:
+            x.append(item[item1][0:5]+"...")
+            y.append(item[item2])
+        else:
+            x.append(item[item1])
+            y.append(item[item2])
     plt.bar(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
@@ -165,7 +169,7 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.plot(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
-    plt.title("Order Volume by Month")
+    plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
 def pieChart(whatQuery, var1, var2, item1, item2):
@@ -175,60 +179,31 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     for item in top_10_products:
         x.append(item[item1])
         y.append(item[item2])
-    plt.pie(y, labels=x)
+    plt.pie(y)
+    plt.legend(x,title='status', loc="upper left")
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
-
-'''
-def crossReference(itemToCompare, table, columnID, returnValueID): #connect values to other values that are spread across different tables
-    allEntries = list(curs.execute("SELECT * FROM " + table))
-    reference = [row[columnID] for row in allEntries]
-    for i in reference:
-        if(itemToCompare == i):
-            match = allEntries[reference.index(i)][returnValueID]
-            return match
-    return "No matches found"'''
 
 #------------------CALLS-------------------
 
 #print(df)
 
-#print("Amount of customers in dataset: "+ str(curs.execute(queryCustAmount).fetchone()[0]))
-#print("Amount of orders in dataset: "+ str(curs.execute(queryOrderAmount).fetchone()[0]))
-#print("Amount of orders placed in dataset: "+str(getAmount(tables[5])))
-#print(crossReference("8cab8abac59158715e0d70a36c807415", tables[6], 0, 1))
-#print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
-#print(getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10))
-#print("Average Order Value: "+str(curs.execute(queryOrderAvg).fetchone()[0]))
-#print("City with most customers: "+getMostAmountInCategory(queryCities))
-#getTop(queryCities, "City", "Customers", 0, 1, 10)
-#print(viewQuery(queryOrderStatus, 8))
-#print(viewQuery(queryReviews, 50))
-#print(getMostAmountInCategory(queryHighSpending, 0, 2))
+print("Amount of customers in dataset: "+ str(curs.execute(queryCustAmount).fetchone()[0]))
+print("Amount of orders in dataset: "+ str(curs.execute(queryOrderAmount).fetchone()[0]))
+print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
+print(getTop(querySellers, "Seller ID", "Revenue",0 , 2, 10))
+print("Average Order Value: "+str(curs.execute(queryOrderAvg).fetchone()[0]))
+print("City with most customers:"+ str(getTop(queryCities, "City", "Customers", 0, 1, 10)))
+print("Seller Reviews Average:" +str(viewQuery(queryReviews, 50)))
+print("Orders in Statuses: \n" +str(viewQuery(queryOrderStatus, 8)))
+print("Highest Spending Customer + Money Spent: \n"+str(getMostAmountInCategory(queryHighSpending, 0, 2)))
 print(viewQuery(queryOrderEachMonth, -1))
 
-#barGraph(queryCities, "City", "Customers", 0, 1)
-
-#barGraph(querySellers,"Seller ID", "Revenue",0,2)
-#barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
-
-
-#lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
-
-#pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
-'''
-#get amount of customers in database
-peopleInDatabase = 0
-for entry in curs.execute("SELECT * FROM "+tables[0]):
-    peopleInDatabase += 1
-print(peopleInDatabase)
-
-#get amount of orders in database
-
-peopleInDatabase = 0
-for entry in curs.execute("SELECT * FROM "+tables[0]):
-    peopleInDatabase += 1
-print(peopleInDatabase)'''
+barGraph(queryCities, "City", "Customers", 0, 1)
+barGraph(querySellers,"Seller ID", "Revenue",0,2)
+barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
 
+lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
+pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
