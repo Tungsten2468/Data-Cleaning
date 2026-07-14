@@ -1,4 +1,5 @@
 import _sqlite3 as SQ
+import csv
 import pandas as pan
 from faker import Faker 
 import os
@@ -212,6 +213,9 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
+
+
+
 #------------------CALLS-------------------
 
 #print(df)
@@ -237,7 +241,7 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
 
-pp ='''CREATE TABLE IF NOT EXISTS external_db.new_table AS 
+pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
 SELECT 
     i.customer_state,p.payment_type, 
     p.payment_installments, 
@@ -298,5 +302,35 @@ temp_con.close()
 
 csv_path = os.path.join(dest_folder, "extracted_data.csv")
 df.to_csv(csv_path, index=False)
-curs.execute("DETACH DATABASE external_db;")
+
 dataConnect.close()
+
+
+
+
+data = []
+fileName = "extracted_data.csv"
+dataFile = open("syn_output_data/"+fileName, newline="")
+fileRead = csv.DictReader(dataFile)
+
+for entry in fileRead:
+    data.append(entry)
+
+dataFile.close()
+
+def calcMedian(key):
+    inOrder = []
+    for i in data:
+        inOrder.append(i[key])
+    inOrder.sort()
+    median = 0
+    print(len(inOrder))
+    if(len(inOrder) % 2 == 0): #if list amount is even
+        median = inOrder[int(len(inOrder)/2)]
+        #middle2 = middle1 + 1
+        #median = (middle1+middle2)/2
+    elif(not len(inOrder) % 2 == 0): #if list amount is odd
+        median = inOrder[int((len(inOrder) + 1)/2)]
+    return median
+
+print(calcMedian("product_value"))
