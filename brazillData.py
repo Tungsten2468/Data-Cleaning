@@ -373,4 +373,5 @@ def calcMedian(key):
         median = inOrder[int((len(inOrder) + 1)/2)]
     return median
 
-print(calcMedian("product_value"))
+print("median product value: "+calcMedian("product_value"))
+print("median freight value: "+calcMedian("freight_value"))
