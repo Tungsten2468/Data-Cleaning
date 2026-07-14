@@ -107,14 +107,14 @@ queryOrderEachMonth = '''SELECT
                         '''
 
 newtable = ''' SELECT 
-    i.customer_id,i.customer_state, i.order_id, i.order_status, i.order_purchase_timestamp, i.order_approved_at, i.order_delivered_carrier_date, i.order_delivered_customer_date, i.order_estimated_delivery_date, p.payment_sequential, p.payment_type, p.payment_installments, p.payment_value
-    FROM olist_customers_dataset i
+    i.customer_id,i.customer_state, o.order_id, o.order_status, o.order_purchase_timestamp, o.order_approved_at, o.order_delivered_carrier_date, o.order_delivered_customer_date, o.order_estimated_delivery_date, p.payment_sequential, p.payment_type, p.payment_installments, p.payment_value
+    FROM olist_customers_dataset i 
+    JOIN olist_orders_dataset o
+        ON i.customer_id = o.customer_id
     JOIN olist_order_payments_dataset p
-        ON i.order_id = p.order_id
-    WHERE i.order_status = 'delivered' AND p.payment_type = 'credit_card' AND p.payment_installments > 1
-    INNER JOIN olist_orders_dataset o
-        ON i.order_id = o.order_id
-
+        ON o.order_id = p.order_id
+    GROUP BY o.order_id
+    LIMIT ?
     '''
 
 #------------------FUNCTIONS-------------------
@@ -219,4 +219,4 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
-print(viewQuery(newtable, 10))
+viewQuery(newtable, 10).fetchall()
