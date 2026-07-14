@@ -106,6 +106,17 @@ queryOrderEachMonth = '''SELECT
                         GROUP BY month
                         '''
 
+newtable = ''' SELECT 
+    i.customer_id,i.customer_state, i.order_id, i.order_status, i.order_purchase_timestamp, i.order_approved_at, i.order_delivered_carrier_date, i.order_delivered_customer_date, i.order_estimated_delivery_date, p.payment_sequential, p.payment_type, p.payment_installments, p.payment_value
+    FROM olist_customers_dataset i
+    JOIN olist_order_payments_dataset p
+        ON i.order_id = p.order_id
+    WHERE i.order_status = 'delivered' AND p.payment_type = 'credit_card' AND p.payment_installments > 1
+    INNER JOIN olist_orders_dataset o
+        ON i.order_id = o.order_id
+
+    '''
+
 #------------------FUNCTIONS-------------------
 def getAmount(query): #just counts entires
     amount = 0
@@ -187,7 +198,7 @@ def pieChart(whatQuery, var1, var2, item1, item2):
 #------------------CALLS-------------------
 
 #print(df)
-
+'''
 print("Amount of customers in dataset: "+ str(curs.execute(queryCustAmount).fetchone()[0]))
 print("Amount of orders in dataset: "+ str(curs.execute(queryOrderAmount).fetchone()[0]))
 print(getTop(queryProducts, "Product Category", "Sales", 0, 1, 10))
@@ -206,4 +217,6 @@ barGraph(queryProducts, "ProductCategory", "Sales", 0, 1)
 
 lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
-pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)
+pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
+
+print(viewQuery(newtable, 10))
