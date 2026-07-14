@@ -107,17 +107,7 @@ queryOrderEachMonth = '''SELECT
                         '''
 
 newtable = ''' SELECT 
-    i.customer_id,i.customer_state, 
-    o.order_id, o.order_status, 
-    o.order_purchase_timestamp, 
-    o.order_approved_at, 
-    o.order_delivered_carrier_date, 
-    o.order_delivered_customer_date, 
-    o.order_estimated_delivery_date, 
-    p.payment_sequential, 
-    p.payment_type, 
-    p.payment_installments, 
-    p.payment_value
+    i.customer_state,p.payment_type, p.payment_installments, a.price , a.freight_value, p.payment_value, r.review_score, o.order_purchase_timestamp, o.order_delivered_customer_date, o.order_estimated_delivery_date
     FROM olist_customers_dataset i 
     JOIN olist_orders_dataset o
         ON i.customer_id = o.customer_id
