@@ -233,4 +233,37 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
-viewQuery(newtable, 10)
+
+pp ='''CREATE TABLE IF NOT EXISTS external_db.new_table AS 
+SELECT 
+    i.customer_state,p.payment_type, 
+    p.payment_installments, 
+    SUM(a.price) AS product_value, 
+    a.freight_value, 
+    p.payment_value AS total_payment, 
+    r.review_score, 
+    o.order_purchase_timestamp AS purchase_date, 
+    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
+    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
+    FROM olist_customers_dataset i 
+    JOIN olist_orders_dataset o
+        ON i.customer_id = o.customer_id
+
+    JOIN olist_order_items_dataset a
+        ON o.order_id = a.order_id
+    JOIN olist_order_reviews_dataset r
+        ON o.order_id = r.order_id
+    JOIN olist_order_payments_dataset p
+        ON o.order_id = p.order_id
+    WHERE o.order_status = 'delivered'
+    GROUP BY o.order_id'''
+
+dest_folder = "syn_output_data" 
+new_db_path = os.path.join(dest_folder, "final_reports.db")
+curs.execute(f"ATTACH DATABASE '{new_db_path}' AS external_db;")
+os.makedirs(dest_folder, exist_ok=True)
+curs.executescript(pp)
+dataConnect.commit()
+
+curs.execute("DETACH DATABASE external_db;")
+dataConnect.close()
