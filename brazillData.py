@@ -107,13 +107,13 @@ queryOrderEachMonth = '''SELECT
                         '''
 
 newtable = ''' SELECT 
-    i.customer_id,i.customer_state, i.order_id, i.order_status, i.order_purchase_timestamp, i.order_approved_at, i.order_delivered_carrier_date, i.order_delivered_customer_date, i.order_estimated_delivery_date, p.payment_sequential, p.payment_type, p.payment_installments, p.payment_value
+    i.customer_id,i.customer_state, p.order_id, p.order_status, i.order_purchase_timestamp, i.order_approved_at, i.order_delivered_carrier_date, i.order_delivered_customer_date, i.order_estimated_delivery_date, p.payment_sequential, p.payment_type, p.payment_installments, p.payment_value
     FROM olist_customers_dataset i
     JOIN olist_order_payments_dataset p
         ON i.order_id = p.order_id
-    WHERE i.order_status = 'delivered' AND p.payment_type = 'credit_card' AND p.payment_installments > 1
     INNER JOIN olist_orders_dataset o
         ON i.order_id = o.order_id
+    WHERE i.order_status = 'delivered' AND p.payment_type = 'credit_card' AND p.payment_installments > 1
 
     '''
 
