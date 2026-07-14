@@ -114,8 +114,8 @@ newtable = ''' SELECT
     p.payment_value AS total_payment, 
     r.review_score, 
     o.order_purchase_timestamp AS purchase_date, 
-    CAST(SUBSTR(o.order_delivered_customer_date, 9, 2) AS INTEGER) -
-    CAST(SUBSTR(o.order_purchase_timestamp, 9, 2)  AS INTEGER) AS delivery_days
+    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
+    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
     FROM olist_customers_dataset i 
     JOIN olist_orders_dataset o
         ON i.customer_id = o.customer_id
