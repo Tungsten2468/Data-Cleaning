@@ -154,10 +154,26 @@ queryMeanPV = '''SELECT
                     ROUND(AVG(i.product_value), 2) AS mean_product_value
                     FROM new_table i
                     '''
+queryMeanFV = '''SELECT
+                    ROUND(AVG(i.freight_value), 2) AS mean_freight_value
+                    FROM new_table i
+                    '''
+queryMeanDT = '''SELECT
+                    ROUND(AVG(i.delivery_days), 2) AS delivery_days
+                    FROM new_table i
+                    '''
 queryMedianPV = '''SELECT
                     i.product_value
                     FROM new_table i
                     ORDER BY i.product_value ASC'''
+queryMedianFV = '''SELECT
+                    i.freight_value
+                    FROM new_table i
+                    ORDER BY i.freight_value ASC'''
+queryMedianDT = '''SELECT
+                    i.delivery_days
+                    FROM new_table i
+                    ORDER BY i.delivery_days ASC'''
 
 #------------------FUNCTIONS-------------------
 def calcMedian(query):
@@ -334,7 +350,8 @@ curs.executescript(pp)
 dataConnect.commit()
 
 print(viewQuery(queryMeanPV, -1))
-print(calcMedian(queryMedianPV))
+print(viewQuery(queryMeanFV, -1))
+print(viewQuery(queryMeanDT, -1))
 
 temp_con = SQ.connect(new_db_path)
 df = pan.read_sql_query("SELECT * FROM new_table", temp_con)
@@ -375,3 +392,4 @@ def calcMedian(key):
 
 print("median product value: "+calcMedian("product_value"))
 print("median freight value: "+calcMedian("freight_value"))
+print("median freight value: "+calcMedian("delivery_days"))
