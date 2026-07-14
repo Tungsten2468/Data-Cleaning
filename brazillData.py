@@ -1,7 +1,10 @@
 import _sqlite3 as SQ
 import pandas as pan
+from faker import Faker 
 import os
 import matplotlib.pyplot as plt 
+
+
 
 tables = []
 #indexes of tables:
@@ -284,5 +287,16 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(pp)
 dataConnect.commit()
 
+curs.execute("DETACH DATABASE external_db;")
+dataConnect.close()
+
+
+
+temp_con = SQ.connect(new_db_path)
+df = pan.read_sql_query("SELECT * FROM new_table", temp_con)
+temp_con.close()
+
+csv_path = os.path.join(dest_folder, "extracted_data.csv")
+df.to_csv(csv_path, index=False)
 curs.execute("DETACH DATABASE external_db;")
 dataConnect.close()
