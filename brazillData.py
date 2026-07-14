@@ -107,10 +107,22 @@ queryOrderEachMonth = '''SELECT
                         '''
 
 newtable = ''' SELECT 
-    i.customer_state,p.payment_type, p.payment_installments, a.price , a.freight_value, p.payment_value, r.review_score, o.order_purchase_timestamp, o.order_delivered_customer_date, o.order_estimated_delivery_date
+    i.customer_state,p.payment_type, 
+    p.payment_installments, 
+    SUM(a.price) AS product_value, 
+    a.freight_value, 
+    p.payment_value AS total_payment, 
+    r.review_score, 
+    o.order_purchase_timestamp AS purchase_date, 
+    CAST(SUBSTR(o.order_delivered_customer_date, 9, 2) AS INTEGER) -
+    CAST(SUBSTR(o.order_purchase_timestamp, 9, 2)  AS INTEGER) AS delivery_days
     FROM olist_customers_dataset i 
     JOIN olist_orders_dataset o
         ON i.customer_id = o.customer_id
+    JOIN olist_order_items_dataset a
+        ON o.order_id = a.order_id
+    JOIN olist_order_reviews_dataset r
+        ON o.order_id = r.order_id
     JOIN olist_order_payments_dataset p
         ON o.order_id = p.order_id
     GROUP BY o.order_id
@@ -118,6 +130,8 @@ newtable = ''' SELECT
     '''
 
 #------------------FUNCTIONS-------------------
+def fixDeliveryDays(wrongValue, row):
+    return
 def getAmount(query): #just counts entires
     amount = 0
     for entry in curs.execute(query):
