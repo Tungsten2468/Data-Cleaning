@@ -267,9 +267,6 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
-
-
-
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
 print(viewQuery(queryMostCommonStates, 50))
@@ -360,9 +357,6 @@ temp_con.close()
 csv_path = os.path.join(dest_folder, "extracted_data.csv")
 df.to_csv(csv_path, index=False)
 
-dataConnect.close()
-
-
 
 
 data = []
@@ -372,8 +366,6 @@ fileRead = csv.DictReader(dataFile)
 
 for entry in fileRead:
     data.append(entry)
-
-dataFile.close()
 
 def calcMedian(key):
     inOrder = []
@@ -393,3 +385,12 @@ def calcMedian(key):
 print("median product value: "+calcMedian("product_value"))
 print("median freight value: "+calcMedian("freight_value"))
 print("median freight value: "+calcMedian("delivery_days"))
+
+def generateSyntheticData(table, column):
+    datas = curs.execute("SELECT "+column+" FROM "+table)
+    #curs.execute()
+
+generateSyntheticData("new_table", "customer_state")
+
+dataConnect.close()
+dataFile.close()
