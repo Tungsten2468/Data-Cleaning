@@ -143,7 +143,7 @@ queryMostCommonStates = '''SELECT
                         FROM olist_customers_dataset i
                         GROUP BY i.customer_state
                         ORDER BY stateCounts DESC
-                        LIMIT ?'''
+                        '''
 queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
@@ -173,6 +173,11 @@ queryMedianDT = '''SELECT
                     i.delivery_days
                     FROM organized_data i
                     ORDER BY i.delivery_days ASC'''
+queryPaymentTypes = '''SELECT
+                        i.payment_type, COUNT (*) AS payment_type_count
+                        FROM olist_order_payments_dataset i
+                        GROUP BY i.payment_type
+                        ORDER BY payment_type_count DESC'''
 
 queryAllOrg = "SELECT * FROM organized_data"
 
@@ -341,8 +346,7 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query):
 
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
-print(viewQuery(queryMostCommonStates, 50))
-print(viewQuery(queryReviewDist, -1))
+#print(viewQuery(queryReviewDist, -1))
 
 print(viewQuery(queryOrderEachMonth, -1))
 #print(df)
@@ -464,9 +468,16 @@ dataConnect.commit()
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50)
-
-#calcDistributions(queryReviewDist, -1)
 generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist)
+generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP","RJ","MG","RS","PR",
+                                                                            "SC","BA","DF","ES","GO",
+                                                                            "PE","CE","PA","MT","MA",
+                                                                            "MS","PB","PI","RN","AL",
+                                                                            "SE","TO","RO","AM","AC",
+                                                                            "AP","RR"], queryMostCommonStates)
+generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
+                                                                          "debit_card","not_defined",
+                                                                          "voucher"], queryPaymentTypes)
 
 #synthetic review scores:
 #print(viewQuery(queryReviewDist, -1))
