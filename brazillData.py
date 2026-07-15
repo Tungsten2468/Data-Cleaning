@@ -461,7 +461,7 @@ empty_table('Summary_Stats',Summary_stats)
 
 sumVars =['Product Value','Freight Value','Total Payment','Delivery Installments']
 insertion('summary_Stats','Variable',sumVars)
-
+insertion()
 
 
 
