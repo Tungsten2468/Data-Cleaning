@@ -360,7 +360,7 @@ temp_con.close()
 csv_path = os.path.join(dest_folder, "extracted_data.csv")
 df.to_csv(csv_path, index=False)
 
-dataConnect.close()
+
 
 
 
@@ -393,3 +393,25 @@ def calcMedian(key):
 print("median product value: "+calcMedian("product_value"))
 print("median freight value: "+calcMedian("freight_value"))
 print("median freight value: "+calcMedian("delivery_days"))
+
+syn_table = ''' 
+CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
+    syn_order_id TEXT PRIMARY KEY,
+    customer_state TEXT,
+    payment_type TEXT,
+    payment_installments INTEGER,
+    product_value REAL,
+    freight_value REAL,
+    total_payment REAL,
+    review_score INTEGER,
+    purchase_date TEXT,
+    delivery_days INTEGER);'''
+
+dest_folder = "syn_output_data" 
+new_db_path = os.path.join(dest_folder, "final_reports.db")
+curs.execute(f"ATTACH DATABASE '{new_db_path}' AS syn_db;")
+os.makedirs(dest_folder, exist_ok=True)
+curs.executescript(syn_table)
+dataConnect.commit()
+
+dataConnect.close()
