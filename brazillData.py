@@ -397,7 +397,7 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
     for entry in datas:
         op = random.randint(0, 1)
         randMod = random.randint(0, maxModifier)
-
+        entry = float(entry)  # Ensure entry is a float for calculations
         if op == 0:
             if entry - randMod >= 0:
                 entry -= randMod
@@ -416,7 +416,14 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
 
     dataConnect.commit()
 
-
+Summary_stats='''CREATE TABLE IF NOT EXISTS external_db.summary_stats (
+    Variable TEXT PRIMARY KEY,
+    mean_product_value REAL,
+    mean_freight_value REAL,
+    mean_delivery_days REAL,
+    median_product_value REAL,
+    median_freight_value REAL,
+    median_delivery_days REAL);'''
 
 syn_table = ''' 
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
@@ -436,7 +443,17 @@ new_db_path = os.path.join(dest_folder, "final_reports.db")
 curs.execute(f"ATTACH DATABASE '{new_db_path}' AS syn_db;")
 os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
+curs.executescript(Summary_stats)
 dataConnect.commit()
+
+pv = ['Product Value','Fright Value','Total payment','Delivery Days']
+
+for x in pv:
+    curs.execute(f"INSERT INTO summary_stats (Variable) VALUES (? )", (x,))
+
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
+
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 
