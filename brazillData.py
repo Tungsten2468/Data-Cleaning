@@ -399,25 +399,19 @@ for entry in fileRead:
 #print("median freight value: "+calcMedian("freight_value"))
 #print("median freight value: "+calcMedian("delivery_days"))
 
-syn_table = ''' 
-CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
-    syn_order_id TEXT PRIMARY KEY,
-    customer_state TEXT,
-    payment_type TEXT,
-    payment_installments INTEGER,
-    product_value REAL,
-    freight_value REAL,
-    total_payment REAL,
-    review_score INTEGER,
-    purchase_date TEXT,
-    delivery_days INTEGER);'''
+empty_table('syn_data',syn_table)
+empty_table('Summary_Stats',Summary_stats)
 
-dest_folder = "syn_output_data" 
-new_db_path = os.path.join(dest_folder, "final_reports.db")
-curs.execute(f"ATTACH DATABASE '{new_db_path}' AS syn_db;")
-os.makedirs(dest_folder, exist_ok=True)
-curs.executescript(syn_table)
-dataConnect.commit()
+sumVars =['Product Value','Freight Value','Total Payment','Delivery Installments']
+insertion('summary_Stats','Variable',sumVars)
+insertion()
+
+
+
+
+
+
+
 
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50)
@@ -432,5 +426,3 @@ generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4
 
 dataFile.close()
 dataConnect.close()
-
-print("Code finished executing")
