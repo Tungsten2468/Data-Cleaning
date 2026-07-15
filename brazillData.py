@@ -401,7 +401,6 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
     dataConnect.commit()
 
 
-
 syn_table = ''' 
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
     syn_order_id TEXT PRIMARY KEY,
