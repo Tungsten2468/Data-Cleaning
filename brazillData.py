@@ -368,54 +368,12 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
 
-pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
-SELECT 
-    i.customer_state,p.payment_type, 
-    p.payment_installments, 
-    ROUND(SUM(a.price),2) AS product_value, 
-    ROUND(SUM(a.freight_value), 2) AS freight_value,  
-    ROUND(p.payment_value, 2) AS total_payment,
-    r.review_score, 
-    o.order_purchase_timestamp AS purchase_date, 
-    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
-    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
-    FROM olist_customers_dataset i 
-    JOIN olist_orders_dataset o
-        ON i.customer_id = o.customer_id
-
-    JOIN olist_order_items_dataset a
-        ON o.order_id = a.order_id
-    JOIN olist_order_reviews_dataset r
-        ON o.order_id = r.order_id
-    JOIN olist_order_payments_dataset p
-        ON o.order_id = p.order_id
-    WHERE o.order_status = 'delivered'
-
-
-        AND a.price >= 0 
-        AND a.freight_value >= 0
-        AND p.payment_value >= 0
- 
-        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
- 
-        AND o.order_delivered_customer_date IS NOT NULL
-    GROUP BY 
-    o.order_id,
-    i.customer_state,
-    p.payment_type,
-    p.payment_installments,
-    p.payment_value,
-    r.review_score,
-    o.order_purchase_timestamp,
-    o.order_delivered_customer_date
-    ORDER BY purchase_date ASC
-    '''
 
 dest_folder = "syn_output_data" 
 new_db_path = os.path.join(dest_folder, "final_reports.db")
 curs.execute(f"ATTACH DATABASE '{new_db_path}' AS external_db;")
 os.makedirs(dest_folder, exist_ok=True)
-curs.executescript(pp)
+curs.executescript(organziedData)
 dataConnect.commit()
 
 print(viewQuery(queryMeanPV, -1))
