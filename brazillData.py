@@ -154,27 +154,27 @@ queryReviewDist = '''SELECT
 
 queryMeanPV = '''SELECT
                     ROUND(AVG(i.product_value), 2) AS mean_product_value
-                    FROM new_table i
+                    FROM organized_data i
                     '''
 queryMeanFV = '''SELECT
                     ROUND(AVG(i.freight_value), 2) AS mean_freight_value
-                    FROM new_table i
+                    FROM organized_data i
                     '''
 queryMeanDT = '''SELECT
                     ROUND(AVG(i.delivery_days), 2) AS delivery_days
-                    FROM new_table i
+                    FROM organized_data i
                     '''
 queryMedianPV = '''SELECT
                     i.product_value
-                    FROM new_table i
+                    FROM organized_data i
                     ORDER BY i.product_value ASC'''
 queryMedianFV = '''SELECT
                     i.freight_value
-                    FROM new_table i
+                    FROM organized_data i
                     ORDER BY i.freight_value ASC'''
 queryMedianDT = '''SELECT
                     i.delivery_days
-                    FROM new_table i
+                    FROM organized_data i
                     ORDER BY i.delivery_days ASC'''
 
 #------------------FUNCTIONS-------------------
@@ -353,7 +353,7 @@ print(viewQuery(queryMeanFV, -1))
 print(viewQuery(queryMeanDT, -1))
 
 temp_con = SQ.connect(new_db_path)
-df = pan.read_sql_query("SELECT * FROM new_table", temp_con)
+df = pan.read_sql_query("SELECT * FROM organized_data", temp_con)
 temp_con.close()
 
 csv_path = os.path.join(dest_folder, "extracted_data.csv")
@@ -386,19 +386,36 @@ print("median product value: "+calcMedian("product_value"))
 print("median freight value: "+calcMedian("freight_value"))
 print("median freight value: "+calcMedian("delivery_days"))
 
+import random
+
+
 def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
-    datas = noTuple(curs.execute("SELECT "+column+" FROM "+realTable))
+    raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
+
+    datas = [row[0] for row in raw_rows if row[0] is not None]
+
     for entry in datas:
-        op = random.randint(0, 1) #decide if the modifier will be subtracted or added to the original [0 = sub, 1 = add]
+        op = random.randint(0, 1)
         randMod = random.randint(0, maxModifier)
-        if(op == 0):
-            entry -= randMod
-        elif(op == 1):
+
+        if op == 0:
+            if entry - randMod >= 0:
+                entry -= randMod
+            else:
+                entry += randMod
+        elif op == 1:
             entry += randMod
- 
-        curs.execute("INSERT INTO "+fakeTable+" ("+column+") VALUES (?)", (entry,))
-    
+
+        if entry < 0:
+            entry = 0
+
+        if isinstance(entry, float):
+            entry = round(entry, 2)
+
+        curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
+
     dataConnect.commit()
+
 
 
 syn_table = ''' 
@@ -421,8 +438,7 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
 dataConnect.commit()
 
-generateSyntheticNumericalData("new_table", "product_value", "empty_synthetic_data", 50)
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 
-dataConnect.close()
 dataFile.close()
 dataConnect.close()
