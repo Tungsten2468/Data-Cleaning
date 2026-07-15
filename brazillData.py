@@ -1,7 +1,6 @@
 import _sqlite3 as SQ
 import csv
 import pandas as pan
-from faker import Faker 
 import os
 import matplotlib.pyplot as plt 
 import numpy
@@ -145,13 +144,11 @@ queryMostCommonStates = '''SELECT
                         GROUP BY i.customer_state
                         ORDER BY stateCounts DESC
                         LIMIT ?'''
-
 queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
                         GROUP BY i.review_score
                         ORDER BY reviewScoreCount DESC'''
-
 queryMeanPV = '''SELECT
                     ROUND(AVG(i.product_value), 2) AS mean_product_value
                     FROM organized_data i
@@ -177,7 +174,26 @@ queryMedianDT = '''SELECT
                     FROM organized_data i
                     ORDER BY i.delivery_days ASC'''
 
+queryAllOrg = "SELECT * FROM organized_data"
+
 #------------------FUNCTIONS-------------------
+def calcDistributions(query):
+    rows = curs.execute(query).fetchall()
+    headers = [desc[0] for desc in curs.description]
+
+    total = 0
+    percents = []
+
+    for row in rows:
+        total += row[1]
+    for row in rows:
+        percentage = ((row[1] / total) * 100)/100
+        percents.append(percentage)
+    #print(viewQuery(query, lim))
+    #print(percents)
+    return percents
+
+
 def calcMedian(query):
     inOrder = []
     for i in curs.execute(query).fetchall():
@@ -268,6 +284,60 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     plt.legend(x,title='status', loc="upper left")
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
+
+def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
+    raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
+
+    datas = [row[0] for row in raw_rows if row[0] is not None]
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
+    rowID = 1
+    for entry in datas:
+        op = random.randint(0, 1)
+        randMod = random.randint(0, maxModifier)
+
+        if op == 0:
+            if entry - randMod >= 0:
+                entry -= randMod
+            else:
+                entry += randMod
+        elif op == 1:
+            entry += randMod
+
+        if entry < 0:
+            entry = 0
+
+        if isinstance(entry, float):
+            entry = round(entry, 2)
+
+        if(len(checkSynR) != 0):
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
+        rowID += 1
+
+    dataConnect.commit()
+
+def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query):
+    
+    #raw_rows = curs.execute(f"SELECT {column} FROM {fakeTable}").fetchall()
+
+    #datas = [row[0] for row in raw_rows if row[0] is not None]
+    synthetic = list(numpy.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
+
+    rowID = 1
+    for synData in synthetic:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (synData,))
+        rowID += 1
+
+    dataConnect.commit()
 
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
@@ -367,56 +437,9 @@ fileRead = csv.DictReader(dataFile)
 for entry in fileRead:
     data.append(entry)
 
-def calcMedian(key):
-    inOrder = []
-    for i in data:
-        inOrder.append(i[key])
-    inOrder.sort()
-    median = 0
-    print(len(inOrder))
-    if(len(inOrder) % 2 == 0): #if list amount is even
-        median = inOrder[int(len(inOrder)/2)]
-        #middle2 = middle1 + 1
-        #median = (middle1+middle2)/2
-    elif(not len(inOrder) % 2 == 0): #if list amount is odd
-        median = inOrder[int((len(inOrder) + 1)/2)]
-    return median
-
-print("median product value: "+calcMedian("product_value"))
-print("median freight value: "+calcMedian("freight_value"))
-print("median freight value: "+calcMedian("delivery_days"))
-
-import random
-
-
-def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
-    raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
-
-    datas = [row[0] for row in raw_rows if row[0] is not None]
-
-    for entry in datas:
-        op = random.randint(0, 1)
-        randMod = random.randint(0, maxModifier)
-
-        if op == 0:
-            if entry - randMod >= 0:
-                entry -= randMod
-            else:
-                entry += randMod
-        elif op == 1:
-            entry += randMod
-
-        if entry < 0:
-            entry = 0
-
-        if isinstance(entry, float):
-            entry = round(entry, 2)
-
-        curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
-
-    dataConnect.commit()
-
-
+#print("median product value: "+calcMedian("product_value"))
+#print("median freight value: "+calcMedian("freight_value"))
+#print("median freight value: "+calcMedian("delivery_days"))
 
 syn_table = ''' 
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
@@ -439,6 +462,17 @@ curs.executescript(syn_table)
 dataConnect.commit()
 
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
+generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50)
+generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50)
+
+#calcDistributions(queryReviewDist, -1)
+generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist)
+
+#synthetic review scores:
+#print(viewQuery(queryReviewDist, -1))
+#print(numpy.random.choice(["1","2","3","4","5"], size=getAmount(queryAllOrg), p=calcDistributions(queryReviewDist)))
 
 dataFile.close()
 dataConnect.close()
+
+print("Code finished executing")
