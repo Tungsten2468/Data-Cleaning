@@ -4,6 +4,8 @@ import pandas as pan
 from faker import Faker 
 import os
 import matplotlib.pyplot as plt 
+import numpy
+import random
 
 tables = []
 #indexes of tables:
@@ -197,7 +199,7 @@ def getAmount(query): #just counts entires
     return amount
 
 def noTuple(whatQuery): #makes the query not a tuple for easy use
-    tupless = [row for row in whatQuery]
+    tupless = [item for row in whatQuery for item in row]
     return tupless
 
 #-1 = no limit
@@ -357,11 +359,6 @@ temp_con.close()
 csv_path = os.path.join(dest_folder, "extracted_data.csv")
 df.to_csv(csv_path, index=False)
 
-
-
-
-
-
 data = []
 fileName = "extracted_data.csv"
 dataFile = open("syn_output_data/"+fileName, newline="")
@@ -389,14 +386,21 @@ print("median product value: "+calcMedian("product_value"))
 print("median freight value: "+calcMedian("freight_value"))
 print("median freight value: "+calcMedian("delivery_days"))
 
-def generateSyntheticData(table, column):
-    datas = curs.execute("SELECT "+column+" FROM "+table)
-    #curs.execute()
+def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
+    datas = noTuple(curs.execute("SELECT "+column+" FROM "+realTable))
+    for entry in datas:
+        op = random.randint(0, 1) #decide if the modifier will be subtracted or added to the original [0 = sub, 1 = add]
+        randMod = random.randint(0, maxModifier)
+        if(op == 0):
+            entry -= randMod
+        elif(op == 1):
+            entry += randMod
+ 
+        curs.execute("INSERT INTO "+fakeTable+" ("+column+") VALUES (?)", (entry,))
+    
+    dataConnect.commit()
 
-generateSyntheticData("new_table", "customer_state")
 
-dataConnect.close()
-dataFile.close()
 
 syn_table = ''' 
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
@@ -418,4 +422,8 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
 dataConnect.commit()
 
+generateSyntheticNumericalData("new_table", "product_value", "empty_synthetic_data", 50)
+
+dataConnect.close()
+dataFile.close()
 dataConnect.close()
