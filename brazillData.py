@@ -3,7 +3,7 @@ import csv
 import pandas as pan
 import os
 import matplotlib.pyplot as plt 
-import numpy
+import numpy as np
 import random
 
 tables = []
@@ -391,6 +391,39 @@ def generateRangedSyntheticData(query, column, fakeTable): #QUERY MUST ORDER DAT
 
     dataConnect.commit()
 
+
+def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
+    timeList= []
+    rowID=1
+    for x in range(amount):
+        start_dt = np.datetime64(start)
+        end_dt = np.datetime64(end)
+
+# Calculate total seconds between the limits
+        total_seconds = (end_dt - start_dt).astype(int)
+
+# Pick a random second offset
+        random_seconds_offset = np.random.randint(0, total_seconds)
+
+# Add the offset back to the start date
+        random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
+        date = str(random_datetime)
+        date=date.replace('T',' ')
+        timeList.append(date)
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+    for time in timeList:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (time, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (time,))
+        rowID += 1
+
+    dataConnect.commit()
+    
+
+
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
 #print(viewQuery(queryReviewDist, -1))
@@ -512,6 +545,7 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
 dataConnect.commit()
 
+'''
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50)
@@ -528,6 +562,9 @@ generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["bolet
 generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data")
 
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
+'''
+
+generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:00','2018-08-30T00:00:00',10)
 
 dataFile.close()
 dataConnect.close()
