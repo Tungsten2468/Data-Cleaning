@@ -474,6 +474,20 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dat
 
     dataConnect.commit()
 
+def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
+    rowID = 1
+    for i in tableToGetFrom:
+        resultantData = i[0] + i[1]
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {targetColumn} = ? WHERE rowid = ?", (resultantData, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({targetColumn}) VALUES (?)", (resultantData,))
+        rowID += 1
+    dataConnect.commit()
+
+
 def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
     raw_rows = curs.execute(query).fetchall()
     datas = [row for row in raw_rows if row is not None]
@@ -603,6 +617,7 @@ generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:
 
 generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "empty_synthetic_data", 1000)
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
+generateResultingSyntheticData("product_value", "freight_value", "total_payment", "empty_synthetic_data")
 
 
 OmeanPV=(viewQuery(queryMeanPV, -1))
