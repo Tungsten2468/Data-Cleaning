@@ -3,7 +3,7 @@ import csv
 import pandas as pan
 import os
 import matplotlib.pyplot as plt 
-import numpy
+import numpy as np
 import random
 
 tables = []
@@ -175,6 +175,10 @@ queryMaxInstallmentAmnt = '''SELECT
                                 i.payment_installments
                                 FROM olist_order_payments_dataset i
                                 ORDER BY i.payment_installments DESC'''
+queryDeliveryDays = '''SELECT
+                    i.delivery_days
+                    FROM organized_data i
+                    ORDER BY i.delivery_days DESC'''
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
@@ -353,7 +357,7 @@ def generateSyntheticID(column,fakeTable,amount):
     dataConnect.commit()
 
 def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dataLimit):
-    synthetic = list(numpy.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
+    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
@@ -393,6 +397,41 @@ def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUS
             limitHit += 1
 
     dataConnect.commit()
+    
+
+
+
+def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
+    timeList= []
+    rowID=1
+    for x in range(amount):
+        start_dt = np.datetime64(start)
+        end_dt = np.datetime64(end)
+
+# Calculate total seconds between the limits
+        total_seconds = (end_dt - start_dt).astype(int)
+
+# Pick a random second offset
+        random_seconds_offset = np.random.randint(0, total_seconds)
+
+# Add the offset back to the start date
+        random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
+        date = str(random_datetime)
+        date=date.replace('T',' ')
+        timeList.append(date)
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+    for time in timeList:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (time, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (time,))
+        rowID += 1
+
+    dataConnect.commit()
+    
+
 
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
@@ -530,6 +569,10 @@ generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["bolet
                                                                           "voucher"], queryPaymentTypes, 1000)
 generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data", 1000)
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
+
+
+generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:00','2018-08-30T00:00:00',1000)
+generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
 
 dataFile.close()
 dataConnect.close()
