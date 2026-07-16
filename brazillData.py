@@ -328,28 +328,26 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
 
 def generateSyntheticID(column,fakeTable,amount):
     syn = 'SYN'
-    amount = amount +1
     id = 1
     rowID = 1
     synData = []
-    while id != amount :
+    for i in range(amount):
         id = str(id)
         if len(id) == 1 :
-            id = '00'+id
+            id = '000'+id
         elif len(id) == 2 :
+            id = '00'+id
+        elif len(id) == 3 :
             id = '0'+id
-        else:
-            continue
+        elif len(id) == 4 :
+            id = id
 
         synID = syn + id
         synData.append(synID)
         id = int(id)
         id +=1 
 
-
-
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
 
     for sid in synData:
         if(len(checkSynR) != 0):  
