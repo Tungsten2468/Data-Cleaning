@@ -202,22 +202,11 @@ queryMaxInstallmentAmnt = '''SELECT
                                 GROUP BY i.payment_installments
                                 ORDER BY countsHaveThisNum DESC'''
 queryDeliveryDays = '''SELECT
-                    i.delivery_days
-                    FROM organized_data i
-                    ORDER BY i.delivery_days DESC'''
-
-syn_table = ''' 
-CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
-    syn_order_id TEXT PRIMARY KEY,
-    customer_state TEXT,
-    payment_type TEXT,
-    payment_installments INTEGER,
-    product_value REAL,
-    freight_value REAL,
-    total_payment REAL,
-    review_score INTEGER,
-    purchase_date TEXT,
-    delivery_days INTEGER);'''
+                        i.delivery_days,
+                        COUNT (*) AS countsHaveThisNum
+                        FROM organized_data i
+                        GROUP BY i.delivery_days
+                        ORDER BY countsHaveThisNum DESC'''
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
@@ -413,18 +402,6 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dat
 
     dataConnect.commit()
 
-
-
-
-
-
-
-
-
-
-
-
-
 def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
     raw_rows = curs.execute(query).fetchall()
     datas = [row for row in raw_rows if row is not None]
@@ -562,6 +539,7 @@ curs.executescript(pp)
 dataConnect.commit()
 
 
+
 temp_con = SQ.connect(new_db_path)
 df = pan.read_sql_query("SELECT * FROM organized_data", temp_con)
 temp_con.close()
@@ -581,7 +559,18 @@ for entry in fileRead:
 #print("median freight value: "+calcMedian("freight_value"))
 #print("median freight value: "+calcMedian("delivery_days"))
 
-
+syn_table = ''' 
+CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
+    syn_order_id TEXT PRIMARY KEY,
+    customer_state TEXT,
+    payment_type TEXT,
+    payment_installments INTEGER,
+    product_value REAL,
+    freight_value REAL,
+    total_payment REAL,
+    review_score INTEGER,
+    purchase_date TEXT,
+    delivery_days INTEGER);'''
 
 dest_folder = "syn_output_data" 
 new_db_path = os.path.join(dest_folder, "final_reports.db")
@@ -609,18 +598,19 @@ generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:
 generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "empty_synthetic_data", 1000)
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
 
+
 print(viewQuery(queryMeanPV, -1))
 print(viewQuery(queryMeanFV, -1))
 print(viewQuery(queryMeanDT, -1))
+
 print(viewQuery(synqueryMeanPV, -1))
 print(viewQuery(synqueryMeanFV, -1))
 print(viewQuery(synqueryMeanDT, -1))
-print(viewQuery(queryMostCommonPM, 5))
-#print(viewQuery(queryReviewDist, -1))
 
-print(viewQuery(queryOrderEachMonth, -1))
 
 dataFile.close()
+
+
 dataConnect.close()
 
 print("Code finished executing")
