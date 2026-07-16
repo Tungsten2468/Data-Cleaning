@@ -419,6 +419,7 @@ def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t 
 # Pick a random second offset
         random_seconds_offset = np.random.randint(0, total_seconds)
 
+
 # Add the offset back to the start date
         random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
         date = str(random_datetime)
