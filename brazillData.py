@@ -326,6 +326,40 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
 
     dataConnect.commit()
 
+def generateSyntheticID(column,fakeTable,amount):
+    syn = 'SYN'
+    amount = amount +1
+    id = 1
+    rowID = 1
+    synData = []
+    while id != amount :
+        id = str(id)
+        if len(id) == 1 :
+            id = '00'+id
+        elif len(id) == 2 :
+            id = '0'+id
+        else:
+            continue
+
+        synID = syn + id
+        synData.append(synID)
+        id = int(id)
+        id +=1 
+
+
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
+
+    for sid in synData:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (sid, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (sid,))
+        rowID += 1
+
+    dataConnect.commit()
+
 def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query):
     synthetic = list(numpy.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
@@ -494,6 +528,8 @@ generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["bolet
                                                                           "debit_card","not_defined",
                                                                           "voucher"], queryPaymentTypes)
 generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data")
+
+generateSyntheticID('syn_order_id','empty_synthetic_data',10)
 
 dataFile.close()
 dataConnect.close()
