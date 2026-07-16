@@ -294,11 +294,12 @@ def pieChart(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
-def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
+def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, dataLimit):
     raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
     datas = [row[0] for row in raw_rows if row[0] is not None]
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
+    limitHit = 1
 
     for entry in datas:
         op = random.randint(0, 1)
@@ -323,6 +324,10 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
         else:
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
         rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
 
     dataConnect.commit()
 
@@ -358,25 +363,30 @@ def generateSyntheticID(column,fakeTable,amount):
 
     dataConnect.commit()
 
-def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query):
+def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dataLimit):
     synthetic = list(numpy.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
-
+    limitHit = 1
     for synData in synthetic:
         if(len(checkSynR) != 0):  
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
         else:
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (synData,))
         rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
 
     dataConnect.commit()
 
-def generateRangedSyntheticData(query, column, fakeTable): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
+def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
     raw_rows = curs.execute(query).fetchall()
     datas = [row[0] for row in raw_rows if row[0] is not None]
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
+    limitHit = 1
     min = datas[len(datas)-1]
     max = datas[0]
 
@@ -388,8 +398,14 @@ def generateRangedSyntheticData(query, column, fakeTable): #QUERY MUST ORDER DAT
         else:
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
         rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
 
     dataConnect.commit()
+    
+
 
 
 def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
@@ -550,17 +566,20 @@ generateSyntheticNumericalData("organized_data", "product_value", "empty_synthet
 generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50)
 generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50)
 generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist)
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50, 1000)
+generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50, 1000)
+generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50, 1000)
+generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist, 1000)
 generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP","RJ","MG","RS","PR",
                                                                             "SC","BA","DF","ES","GO",
                                                                             "PE","CE","PA","MT","MA",
                                                                             "MS","PB","PI","RN","AL",
                                                                             "SE","TO","RO","AM","AC",
-                                                                            "AP","RR"], queryMostCommonStates)
+                                                                            "AP","RR"], queryMostCommonStates, 1000)
 generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
                                                                           "debit_card","not_defined",
-                                                                          "voucher"], queryPaymentTypes)
-generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data")
-
+                                                                          "voucher"], queryPaymentTypes, 1000)
+generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data", 1000)
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
 '''
 
