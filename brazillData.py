@@ -402,9 +402,6 @@ def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUS
             limitHit += 1
 
     dataConnect.commit()
-    
-
-
 
 def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
     timeList= []
