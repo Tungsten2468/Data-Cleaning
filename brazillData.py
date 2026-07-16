@@ -207,6 +207,72 @@ queryDeliveryDays = '''SELECT
                         FROM organized_data i
                         GROUP BY i.delivery_days
                         ORDER BY countsHaveThisNum DESC'''
+
+syn_table = ''' 
+CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
+    syn_order_id TEXT PRIMARY KEY,
+    customer_state TEXT,
+    payment_type TEXT,
+    payment_installments INTEGER,
+    product_value REAL,
+    freight_value REAL,
+    total_payment REAL,
+    review_score INTEGER,
+    purchase_date TEXT,
+    delivery_days INTEGER);'''
+
+
+pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
+SELECT 
+    i.customer_state,p.payment_type, 
+    p.payment_installments, 
+    ROUND(SUM(a.price),2) AS product_value, 
+    ROUND(SUM(a.freight_value), 2) AS freight_value,  
+    ROUND(p.payment_value, 2) AS total_payment,
+    r.review_score, 
+    o.order_purchase_timestamp AS purchase_date, 
+    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
+    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
+    FROM olist_customers_dataset i 
+    JOIN olist_orders_dataset o
+        ON i.customer_id = o.customer_id
+
+    JOIN olist_order_items_dataset a
+        ON o.order_id = a.order_id
+    JOIN olist_order_reviews_dataset r
+        ON o.order_id = r.order_id
+    JOIN olist_order_payments_dataset p
+        ON o.order_id = p.order_id
+    WHERE o.order_status = 'delivered'
+
+
+        AND a.price >= 0 
+        AND a.freight_value >= 0
+        AND p.payment_value >= 0
+ 
+        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
+ 
+        AND o.order_delivered_customer_date IS NOT NULL
+    GROUP BY 
+    o.order_id,
+    i.customer_state,
+    p.payment_type,
+    p.payment_installments,
+    p.payment_value,
+    r.review_score,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date
+    ORDER BY purchase_date ASC
+    '''
+
+summary_table= ''' 
+CREATE TABLE IF NOT EXISTS external_db.Summary_Statistics (
+    Variable TEXT,
+    Real_Mean INTERGER,
+    Synthetic_Mean INTERGER,
+    Real_Median INTERGER,
+    Synthetic_Median INTERGER); '''
+
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
@@ -254,11 +320,10 @@ def viewQuery(whatQuery, lim): #prints the query for easy viewing/debugging
         rows = curs.execute(whatQuery, (lim,)).fetchall()
     else:
         rows = curs.execute(whatQuery).fetchall()
-    headers = [desc[0] for desc in curs.description]
 
-    print(headers)
+    
     for row in rows:
-        print(row)
+        return(row)
     
 def getMostAmountInCategory(whatQuery, val1ID, val2ID): #query must be ordered in ascending
     qu = curs.execute(whatQuery)
@@ -350,6 +415,13 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, da
         else:
             limitHit += 1
 
+    dataConnect.commit()
+
+def insertIntoTable(tableName, columnNames, values):
+    
+    for x in values:
+        query = f"INSERT INTO {tableName} ({columnNames}) VALUES (?)"
+        curs.execute(query,(x,))
     dataConnect.commit()
 
 def generateSyntheticID(column,fakeTable,amount):
@@ -488,48 +560,6 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
 
-pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
-SELECT 
-    i.customer_state,p.payment_type, 
-    p.payment_installments, 
-    ROUND(SUM(a.price),2) AS product_value, 
-    ROUND(SUM(a.freight_value), 2) AS freight_value,  
-    ROUND(p.payment_value, 2) AS total_payment,
-    r.review_score, 
-    o.order_purchase_timestamp AS purchase_date, 
-    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
-    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
-    FROM olist_customers_dataset i 
-    JOIN olist_orders_dataset o
-        ON i.customer_id = o.customer_id
-
-    JOIN olist_order_items_dataset a
-        ON o.order_id = a.order_id
-    JOIN olist_order_reviews_dataset r
-        ON o.order_id = r.order_id
-    JOIN olist_order_payments_dataset p
-        ON o.order_id = p.order_id
-    WHERE o.order_status = 'delivered'
-
-
-        AND a.price >= 0 
-        AND a.freight_value >= 0
-        AND p.payment_value >= 0
- 
-        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
- 
-        AND o.order_delivered_customer_date IS NOT NULL
-    GROUP BY 
-    o.order_id,
-    i.customer_state,
-    p.payment_type,
-    p.payment_installments,
-    p.payment_value,
-    r.review_score,
-    o.order_purchase_timestamp,
-    o.order_delivered_customer_date
-    ORDER BY purchase_date ASC
-    '''
 
 dest_folder = "syn_output_data" 
 new_db_path = os.path.join(dest_folder, "final_reports.db")
@@ -540,43 +570,19 @@ dataConnect.commit()
 
 
 
-temp_con = SQ.connect(new_db_path)
-df = pan.read_sql_query("SELECT * FROM organized_data", temp_con)
-temp_con.close()
 
-csv_path = os.path.join(dest_folder, "extracted_data.csv")
-df.to_csv(csv_path, index=False)
-
-data = []
-fileName = "extracted_data.csv"
-dataFile = open("syn_output_data/"+fileName, newline="")
-fileRead = csv.DictReader(dataFile)
-
-for entry in fileRead:
-    data.append(entry)
 
 #print("median product value: "+calcMedian("product_value"))
 #print("median freight value: "+calcMedian("freight_value"))
 #print("median freight value: "+calcMedian("delivery_days"))
 
-syn_table = ''' 
-CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
-    syn_order_id TEXT PRIMARY KEY,
-    customer_state TEXT,
-    payment_type TEXT,
-    payment_installments INTEGER,
-    product_value REAL,
-    freight_value REAL,
-    total_payment REAL,
-    review_score INTEGER,
-    purchase_date TEXT,
-    delivery_days INTEGER);'''
 
 dest_folder = "syn_output_data" 
 new_db_path = os.path.join(dest_folder, "final_reports.db")
 curs.execute(f"ATTACH DATABASE '{new_db_path}' AS syn_db;")
 os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
+curs.executescript(summary_table)
 dataConnect.commit()
 
 generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50, 1000)
@@ -599,17 +605,18 @@ generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "emp
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
 
 
-print(viewQuery(queryMeanPV, -1))
-print(viewQuery(queryMeanFV, -1))
-print(viewQuery(queryMeanDT, -1))
+OmeanPV=(viewQuery(queryMeanPV, -1))
+OmeanFV=(viewQuery(queryMeanFV, -1))
+OmeanDT=(viewQuery(queryMeanDT, -1))
 
-print(viewQuery(synqueryMeanPV, -1))
-print(viewQuery(synqueryMeanFV, -1))
-print(viewQuery(synqueryMeanDT, -1))
+SmeanPV=(viewQuery(synqueryMeanPV, -1))
+SmeanFV=(viewQuery(synqueryMeanFV, -1))
+SmeanDT=(viewQuery(synqueryMeanDT, -1))
+
+Vars =['Product_Value', 'Freight_Value', 'Total_Payment', 'Delivery_Days']
 
 
-dataFile.close()
-
+insertIntoTable('Summary_Statistics','Variable',Vars)
 
 dataConnect.close()
 
