@@ -43,7 +43,6 @@ queryCustAmount = '''SELECT
 queryOrderAmount = '''SELECT
                     COUNT(i.order_id) as c
                     FROM olist_orders_dataset i'''
-
 queryProducts = """
     SELECT 
         t.product_category_name_english,
@@ -70,7 +69,6 @@ queryOrderAvg = '''SELECT
                     ROUND(AVG(i.price), 2)
                 FROM olist_order_items_dataset i
                 '''
-
 queryCities = '''SELECT
                     i.customer_city, COUNT(i.customer_id) AS c
                 FROM olist_customers_dataset i
@@ -78,14 +76,12 @@ queryCities = '''SELECT
                 ORDER BY c DESC
                 LIMIT ?
                 '''
-
 queryOrderStatus = '''SELECT
                         i.order_status, COUNT(*) AS c
                     FROM olist_orders_dataset i
                     GROUP BY i.order_status
                     ORDER BY c DESC
                     LIMIT ?'''
-
 queryReviews = '''SELECT
                     i.seller_id, i.order_id, ROUND(AVG(e.review_score)) AS review_avg
                 FROM olist_order_items_dataset i
@@ -94,7 +90,6 @@ queryReviews = '''SELECT
                 GROUP BY i.seller_id
                 LIMIT?
                 '''
-
 queryHighSpending = '''SELECT
                         i.customer_id, i.order_id, e.payment_value
                     FROM olist_orders_dataset i
@@ -102,13 +97,11 @@ queryHighSpending = '''SELECT
                         ON i.order_id = e.order_id
                     ORDER BY e.payment_value ASC
                     '''
-
 queryOrderEachMonth = '''SELECT
                             SUBSTR(i.order_purchase_timestamp, 6, 2) AS month, COUNT(i.order_id)
                         FROM olist_orders_dataset i
                         GROUP BY month
                         '''
-
 newtable = ''' SELECT 
     i.customer_state,p.payment_type, 
     p.payment_installments, 
@@ -137,7 +130,6 @@ queryMostCommonPM = '''SELECT
                         GROUP BY i.payment_type
                         ORDER BY paymentTCounts DESC
                         LIMIT ?'''
-
 queryMostCommonStates = '''SELECT
                         i.customer_state, COUNT(*) AS stateCounts
                         FROM olist_customers_dataset i
@@ -178,13 +170,11 @@ queryPaymentTypes = '''SELECT
                         FROM olist_order_payments_dataset i
                         GROUP BY i.payment_type
                         ORDER BY payment_type_count DESC'''
-
 queryAllOrg = "SELECT * FROM organized_data"
 queryMaxInstallmentAmnt = '''SELECT
                                 i.payment_installments
                                 FROM olist_order_payments_dataset i
                                 ORDER BY i.payment_installments DESC'''
-
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
@@ -201,7 +191,6 @@ def calcDistributions(query):
     #print(viewQuery(query, lim))
     #print(percents)
     return percents
-
 
 def calcMedian(query):
     inOrder = []
