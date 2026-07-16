@@ -180,6 +180,10 @@ queryPaymentTypes = '''SELECT
                         ORDER BY payment_type_count DESC'''
 
 queryAllOrg = "SELECT * FROM organized_data"
+queryMaxInstallmentAmnt = '''SELECT
+                                i.payment_installments
+                                FROM olist_order_payments_dataset i
+                                ORDER BY i.payment_installments DESC'''
 
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
@@ -292,12 +296,10 @@ def pieChart(whatQuery, var1, var2, item1, item2):
 
 def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
     raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
-
     datas = [row[0] for row in raw_rows if row[0] is not None]
-
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
     rowID = 1
+
     for entry in datas:
         op = random.randint(0, 1)
         randMod = random.randint(0, maxModifier)
@@ -325,21 +327,34 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier):
     dataConnect.commit()
 
 def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query):
-    
-    #raw_rows = curs.execute(f"SELECT {column} FROM {fakeTable}").fetchall()
-
-    #datas = [row[0] for row in raw_rows if row[0] is not None]
     synthetic = list(numpy.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
-
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    checkSyn = [row[0] for row in checkSynR if row[0] is not None]
-
     rowID = 1
+
     for synData in synthetic:
         if(len(checkSynR) != 0):  
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
         else:
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (synData,))
+        rowID += 1
+
+    dataConnect.commit()
+
+def generateRangedSyntheticData(query, column, fakeTable): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
+    raw_rows = curs.execute(query).fetchall()
+    datas = [row[0] for row in raw_rows if row[0] is not None]
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    rowID = 1
+    min = datas[len(datas)-1]
+    max = datas[0]
+
+    for entry in datas:
+        entry = random.randint(min, max)
+
+        if(len(checkSynR) != 0):
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
         rowID += 1
 
     dataConnect.commit()
@@ -478,10 +493,7 @@ generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP"
 generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
                                                                           "debit_card","not_defined",
                                                                           "voucher"], queryPaymentTypes)
-
-#synthetic review scores:
-#print(viewQuery(queryReviewDist, -1))
-#print(numpy.random.choice(["1","2","3","4","5"], size=getAmount(queryAllOrg), p=calcDistributions(queryReviewDist)))
+generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data")
 
 dataFile.close()
 dataConnect.close()
