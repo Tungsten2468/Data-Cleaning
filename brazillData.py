@@ -529,7 +529,7 @@ generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["bolet
                                                                           "voucher"], queryPaymentTypes)
 generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data")
 
-generateSyntheticID('syn_order_id','empty_synthetic_data',10)
+generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
 
 dataFile.close()
 dataConnect.close()
