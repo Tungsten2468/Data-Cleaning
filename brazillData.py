@@ -172,13 +172,17 @@ queryPaymentTypes = '''SELECT
                         ORDER BY payment_type_count DESC'''
 queryAllOrg = "SELECT * FROM organized_data"
 queryMaxInstallmentAmnt = '''SELECT
-                                i.payment_installments
-                                FROM olist_order_payments_dataset i
-                                ORDER BY i.payment_installments DESC'''
+                                i.payment_installments,
+                                COUNT (*) AS countsHaveThisNum
+                                FROM organized_data i
+                                GROUP BY i.payment_installments
+                                ORDER BY countsHaveThisNum DESC'''
 queryDeliveryDays = '''SELECT
-                    i.delivery_days
-                    FROM organized_data i
-                    ORDER BY i.delivery_days DESC'''
+                        i.delivery_days,
+                        COUNT (*) AS countsHaveThisNum
+                        FROM organized_data i
+                        GROUP BY i.delivery_days
+                        ORDER BY countsHaveThisNum DESC'''
 #------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
@@ -376,15 +380,16 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dat
 
 def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
     raw_rows = curs.execute(query).fetchall()
-    datas = [row[0] for row in raw_rows if row[0] is not None]
+    datas = [row for row in raw_rows if row is not None]
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
-    min = datas[len(datas)-1]
-    max = datas[0]
+    possibleVals = [val[0] for val in datas if val is not None]
+    
+    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p= calcDistributions(query)))
 
-    for entry in datas:
-        entry = random.randint(min, max)
+    for entry in synthetic:
+        entry = int(entry)
 
         if(len(checkSynR) != 0):
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
@@ -567,12 +572,12 @@ generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP"
 generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
                                                                           "debit_card","not_defined",
                                                                           "voucher"], queryPaymentTypes, 1000)
-generateRangedSyntheticData(queryMaxInstallmentAmnt, "payment_installments", "empty_synthetic_data", 1000)
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
-
-
 generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:00','2018-08-30T00:00:00',1000)
+
+generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "empty_synthetic_data", 1000)
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
+
 
 dataFile.close()
 dataConnect.close()
