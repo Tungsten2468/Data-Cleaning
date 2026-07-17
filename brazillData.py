@@ -136,9 +136,20 @@ queryMostCommonStates = '''SELECT
                         GROUP BY i.customer_state
                         ORDER BY stateCounts DESC
                         '''
+synqueryMostCommonStates = '''SELECT
+                        i.customer_state, COUNT(*) AS stateCounts
+                        FROM empty_synthetic_data i
+                        GROUP BY i.customer_state
+                        ORDER BY stateCounts DESC
+                        '''
 queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
+                        GROUP BY i.review_score
+                        ORDER BY reviewScoreCount DESC'''
+synqueryReviewDist = '''SELECT
+                        i.review_score, COUNT(*) AS reviewScoreCount
+                        FROM empty_synthetic_data i
                         GROUP BY i.review_score
                         ORDER BY reviewScoreCount DESC'''
 queryMeanPV = '''SELECT
@@ -194,6 +205,11 @@ queryPaymentTypes = '''SELECT
                         FROM olist_order_payments_dataset i
                         GROUP BY i.payment_type
                         ORDER BY payment_type_count DESC'''
+synqueryPaymentTypes = '''SELECT
+                        i.payment_type, COUNT (*) AS payment_type_count
+                        FROM empty_synthetic_data i
+                        GROUP BY i.payment_type
+                        ORDER BY payment_type_count DESC'''
 queryAllOrg = "SELECT * FROM organized_data"
 queryMaxInstallmentAmnt = '''SELECT
                                 i.payment_installments,
@@ -207,7 +223,50 @@ queryDeliveryDays = '''SELECT
                         FROM organized_data i
                         GROUP BY i.delivery_days
                         ORDER BY countsHaveThisNum DESC'''
+queryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM organized_data i
+                    '''
+queryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM organized_data i
+                    ORDER BY i.total_payment ASC'''
+synqueryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM empty_synthetic_data i
+                    '''
+synqueryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM empty_synthetic_data i
+                    ORDER BY i.total_payment ASC'''
 #------------------FUNCTIONS-------------------
+def distributionTable(title, query):
+    print(f"{title} distribution(percents):")
+    rows = curs.execute(query).fetchall()
+    headers = [desc[0] for desc in curs.description]
+
+    labels = [l[0] for l in rows]
+
+    total = 0
+    percents = []
+
+    for row in rows:
+        total += row[1]
+    for row in rows:
+        percentage = ((row[1] / total) * 100)/100
+        percents.append(round(percentage,2))
+    #print(viewQuery(query, lim))
+    #print(percents)
+    distTable = pan.DataFrame(
+        [percents],
+        columns=labels
+    )
+
+    print(distTable)
+        
+
+
+
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
     headers = [desc[0] for desc in curs.description]
@@ -321,7 +380,9 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, da
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
-
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
     for entry in datas:
         op = random.randint(0, 1)
         randMod = random.randint(0, maxModifier)
@@ -389,6 +450,9 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dat
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
     for synData in synthetic:
         if(len(checkSynR) != 0):  
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
@@ -406,6 +470,10 @@ def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
     rowID = 1
+    checkValue = list(curs.execute(f'SELECT {targetColumn} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
+
     for i in tableToGetFrom:
         resultantData = i[0] + i[1]
         if(len(checkSynR) != 0):  
@@ -420,6 +488,11 @@ def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUS
     raw_rows = curs.execute(query).fetchall()
     datas = [row for row in raw_rows if row is not None]
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
+
     rowID = 1
     limitHit = 1
     possibleVals = [val[0] for val in datas if val is not None]
@@ -471,8 +544,6 @@ def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t 
         rowID += 1
 
     dataConnect.commit()
-    
-
 
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
@@ -593,9 +664,8 @@ os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
 dataConnect.commit()
 
-generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50, 1000)
-generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50, 1000)
-generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50, 1000)
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 15, 1000)
+generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 15, 1000)
 generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist, 1000)
 generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP","RJ","MG","RS","PR",
                                                                             "SC","BA","DF","ES","GO",
@@ -621,6 +691,45 @@ print(viewQuery(queryMeanDT, -1))
 print(viewQuery(synqueryMeanPV, -1))
 print(viewQuery(synqueryMeanFV, -1))
 print(viewQuery(synqueryMeanDT, -1))
+
+
+
+compTable = pan.DataFrame(
+[['Product Value', 
+  curs.execute(queryMeanPV).fetchone()[0], 
+  curs.execute(synqueryMeanPV).fetchone()[0], 
+  calcMedian(queryMedianPV)[0], 
+  calcMedian(synqueryMedianPV)[0]], 
+  ['Freight Value', 
+   curs.execute(queryMeanFV).fetchone()[0], 
+   curs.execute(synqueryMeanFV).fetchone()[0], 
+   calcMedian(queryMedianFV)[0], 
+   calcMedian(synqueryMedianFV)[0]],
+   ['Total Payment', 
+   curs.execute(queryMeanTP).fetchone()[0], 
+   curs.execute(synqueryMeanTP).fetchone()[0], 
+   calcMedian(queryMedianTP)[0], 
+   calcMedian(synqueryMedianTP)[0]],
+   ['Delivery Days', 
+   curs.execute(queryMeanDT).fetchone()[0], 
+   curs.execute(synqueryMeanDT).fetchone()[0], 
+   calcMedian(queryMedianDT)[0], 
+   calcMedian(synqueryMedianDT)[0]]], 
+
+columns=['Variable','Real Mean', 'Synthetic Mean', 'Real Median', 'Synthetic Median'])
+
+
+#realScatter = plt.bar()
+
+print(compTable)
+print((distributionTable("Real Payment Types",queryPaymentTypes)))
+print((distributionTable("Synthetic Payment Types",synqueryPaymentTypes)))
+
+print((distributionTable("Real Customer States",queryMostCommonStates)))
+print((distributionTable("Synthetic Customer States",synqueryMostCommonStates)))
+
+print((distributionTable("Real Review Score",queryReviewDist)))
+print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 
 
 dataFile.close()
