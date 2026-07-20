@@ -572,7 +572,6 @@ lineGraph(queryOrderEachMonth, "Month", "Orders", 0, 1)
 
 pieChart(queryOrderStatus, "Order Status", "Amount of Orders", 0, 1)'''
 
-
 pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
 SELECT 
     i.customer_state,p.payment_type, 
