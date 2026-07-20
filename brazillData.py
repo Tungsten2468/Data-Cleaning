@@ -609,7 +609,7 @@ generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP"
                                                                             "MS","PB","PI","RN","AL",
                                                                             "SE","TO","RO","AM","AC",
                                                                             "AP","RR"], queryMostCommonStates, 1000)
-generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
+generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["credit_card","boleto",
                                                                           "debit_card","not_defined",
                                                                           "voucher"], queryPaymentTypes, 1000)
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
@@ -618,7 +618,6 @@ generateSyntheticDates('empty_synthetic_data','purchase_date','2016-10-03T00:00:
 generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "empty_synthetic_data", 1000)
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
 generateResultingSyntheticData("product_value", "freight_value", "total_payment", "empty_synthetic_data")
-
 
 OmeanPV=(viewQuery(queryMeanPV, -1))
 OmeanFV=(viewQuery(queryMeanFV, -1))
