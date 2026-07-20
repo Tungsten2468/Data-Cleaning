@@ -1191,7 +1191,7 @@ def piegraph(type,whatQuery, var1, var2, item1, item2):
     sizes = [g[item2] for g in items]   # Pulls the numbers (e.g., 76795)
 
     # 4. Generate and display the Matplotlib pie chart
-    plt.figure(figsize=(8, 6))
+ 
     plt.figure(figsize=(10, 8))  # Larger canvas gives text breathing room
 
     plt.pie(sizes, 
@@ -1241,7 +1241,7 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.show()
 
 
-def pieChart(whatQuery, var1, var2, item1, item2):
+#def pieChart(whatQuery, var1, var2, item1, item2):
     top_10_products = curs.execute(whatQuery, (10,)).fetchall()
     x = []
     y = []
