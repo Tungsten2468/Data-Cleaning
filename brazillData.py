@@ -1180,7 +1180,7 @@ def getTop(whatQuery, var1, var2, item1, item2, topNum):
 
 import matplotlib.pyplot as plt
 
-def piegraph(whatQuery, var1, var2, item1, item2):
+def piegraph(type,whatQuery, var1, var2, item1, item2):
     # 1. Execute and immediately save results to a list so you can loop twice
     items = list(curs.execute(whatQuery))
     
@@ -1205,13 +1205,8 @@ def piegraph(whatQuery, var1, var2, item1, item2):
         autopct='%1.1f%%', 
         pctdistance=0.8,      # Moves percentages closer to the edge
         labeldistance=1.2) 
-    if whatQuery == queryPaymentTypes:
-    
-        plt.title("Orginal Transaction Methods Breakdown", )
-    elif whatQuery == synqueryPaymentTypes:
-        plt.title("Synthetic Transaction Methods Breakdown")
-    else:
-        plt.title(var1 + " Breakdown")
+
+    plt.title(type+' ' +var1 + " Breakdown")
     plt.axis('equal')  
     plt.show()
 
@@ -1688,10 +1683,10 @@ print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 
 print(viewQuery(queryPaymentTypes, -1))
 '''
-piegraph(queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-piegraph(synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-piegraph(queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
-piegraph(synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+#piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+#piegraph('Orginal',queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+piegraph('Synthetic',synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
 dataFile.close()
 
 
