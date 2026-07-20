@@ -1198,12 +1198,20 @@ def piegraph(whatQuery, var1, var2, item1, item2):
 
     # 4. Generate and display the Matplotlib pie chart
     plt.figure(figsize=(8, 6))
-    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+    plt.figure(figsize=(10, 8))  # Larger canvas gives text breathing room
+
+    plt.pie(sizes, 
+        labels=labels, 
+        autopct='%1.1f%%', 
+        pctdistance=0.8,      # Moves percentages closer to the edge
+        labeldistance=1.2) 
     if whatQuery == queryPaymentTypes:
     
         plt.title("Orginal Transaction Methods Breakdown", )
     elif whatQuery == synqueryPaymentTypes:
         plt.title("Synthetic Transaction Methods Breakdown")
+    else:
+        plt.title(var1 + " Breakdown")
     plt.axis('equal')  
     plt.show()
 
@@ -1680,10 +1688,10 @@ print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 
 print(viewQuery(queryPaymentTypes, -1))
 '''
-piegraph(queryPaymentTypes, "Payment Type", "Amount of Orders", 0, 1)
-piegraph(synqueryPaymentTypes, "Payment Type", "Amount of Orders", 0, 1)
-
-
+piegraph(queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph(synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph(queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+piegraph(synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
 dataFile.close()
 
 
