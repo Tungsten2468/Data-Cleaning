@@ -1681,6 +1681,7 @@ print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 print(viewQuery(queryPaymentTypes, -1))
 '''
 piegraph(queryPaymentTypes, "Payment Type", "Amount of Orders", 0, 1)
+piegraph(synqueryPaymentTypes, "Payment Type", "Amount of Orders", 0, 1)
 
 
 dataFile.close()
