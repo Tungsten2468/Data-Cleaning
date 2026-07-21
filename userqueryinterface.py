@@ -33,7 +33,8 @@ while activeUser != "exit":
     
     print("\n")
     print("Please enter your query in the following format:" \
-    "[column_name] ")
+    "\n[column_name] [operation] [target value]\n" \
+    "\nEX: total_payment > 100\n")
     column = input('What column would you like to query?:\n')
 
     if activeUser != "exit":
