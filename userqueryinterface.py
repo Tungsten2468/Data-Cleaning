@@ -19,30 +19,36 @@ while activeUser != "exit":
     
     print("\n")
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
-    
-    tableColumns=f"PRAGMA table_info({activeUser});"
-    cursor.execute(tableColumns)
+    full = input("Would you like to query all columns? (type 'all' for all columns, type 'n' to continue)\n")
+    if full == 'all':
+        userQuery = f'SELECT * FROM {activeUser}'
+        cursor.execute(userQuery)
+        data = cursor.fetchall()
+        for i in data:
+            print(i)
+    if activeUser != "exit" and full != 'all':
+         
+        tableColumns=f"PRAGMA table_info({activeUser});"
+        cursor.execute(tableColumns)
 
-    raw_results = cursor.fetchall()
-    column_names = [col[1] for col in raw_results]
+        raw_results = cursor.fetchall()
+        column_names = [col[1] for col in raw_results]
     
-    print(f"\nYou are querying {activeUser} in {fileName}:\n")
-    print("Available columns: \n")
-    for i in column_names:
-        print(i)
+        print(f"\nYou are querying {activeUser} in {fileName}:\n")
+        print("Available columns: \n")
+        for i in column_names:
+            print(i)
     
     print("\n")
     print("Please enter your query in the following format:" \
     "\n[column_name] [operation] [target value]\n" \
     "\nEX: total_payment > 100\n")
-    column = input('What column would you like to query?:\n')
+    column = input('What would you like to query?:\n')
 
-    if activeUser != "exit":
-        
-        userQuery = f'SELECT {column} FROM {activeUser}'
-        cursor.execute(userQuery)
-        data = cursor.fetchall()
-        for i in data:
-            print(i)
+    userQuery = f'SELECT {column} FROM {activeUser}'
+    cursor.execute(userQuery)
+    data = cursor.fetchall()
+    for i in data:
+        print(i)
 
  
