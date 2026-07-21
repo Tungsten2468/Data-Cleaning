@@ -7,7 +7,7 @@ dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
 cursor = dataConnect.cursor()
 
 print(f"\nYou are querying {fileName}.\n")
-print("You may query the following tables: \n")
+print("You may query the following tables (name or #): \n")
 
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
@@ -16,18 +16,23 @@ def checkActive():
     if activeUser =='exit':
         sys.exit()
 
+def getTables():
+    tableList = []
+    for i in cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").fetchall():
+        tableList.append(i[0])
+    return tableList
 
-def showColumns():
-        tableColumns=f"PRAGMA table_info({activeUser});"
-        cursor.execute(tableColumns)
+def getColumns():
+    tableColumns=f"PRAGMA table_info({activeUser});"
+    cursor.execute(tableColumns)
 
-        raw_results = cursor.fetchall()
-        column_names = [col[1] for col in raw_results]
-    
-        print(f"\nYou are querying {activeUser} in {fileName}:\n")
-        print("Available columns: \n")
-        for i in column_names:
-            print (i)
+    raw_results = cursor.fetchall()
+    column_names = [col[1] for col in raw_results]
+    return column_names
+
+def showOptions(options):
+        for i in options:
+            print (options.index(i), i)
 
 activeUser = ''
 
@@ -40,37 +45,25 @@ def checkExists(input, checkAgainst):
     return False
 
 while activeUser != "exit":
-    cursor.execute(userQuery)
-    tableList = cursor.fetchall()
-    for i in tableList:
-        print(i[0])
+    optionList = getTables()
+    showOptions(optionList)
     
     print("\n")
     
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
-    if activeUser == 'empty_synthetic_data' or activeUser == 'syn' or activeUser == 'empty' or activeUser == 's' or activeUser == 'e':
-        activeUser = 'empty_synthetic_data'
-
-    elif activeUser == 'organized_data' or activeUser == 'org' or activeUser == 'o' or activeUser == 'original' or activeUser == 'organized':
-        activeUser = 'organized_data'
+    if(activeUser[0].isdigit()):
+        activeUser = optionList[int(activeUser)]
     else:
-        print('Invalid table. Check spelling.')
-        activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
+        activeUser = activeUser
     
     checkActive()
 
-    if activeUser == 'syn' or activeUser == 'empty' or activeUser == 's' or activeUser == 'e':
-        activeUser = 'empty_synthetic_data'
-
-    if activeUser == 'org' or activeUser == 'o' or activeUser == 'original' or activeUser == 'organized':
-        activeUser = 'organized_data'
-
-    
+    print(f"\nYou are querying {activeUser} in {fileName}")
 
     action = input("What would you like to do?\n" \
     "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter, (V)view")
 
-
+    print("\n")
 
     if action.upper()[0] == 'A':
         userQuery = f'SELECT * FROM {activeUser}'
@@ -81,15 +74,23 @@ while activeUser != "exit":
         continue
 
     if action.upper()[0] == 'V':
-        amount = int(input('How many columns would you like to view'))
-        colSelection= []
-        for col in range(amount-1):
-            showColumns()
-            userCol = input('What column would you like to query?:\n')
-            colSelection.append(userCol)
+        optionList = getColumns()
+        colSelection = []
+        showOptions(optionList)
+        selection = input("\nSelect the column(s) you want to view (name or #, input 'D' when done)")
+        while selection != 'D':
+            if(selection[0].isdigit):
+                colSelection.append(optionList.pop(int(selection)))
+            else:
+                colSelection.append(selection)
+            showOptions(optionList)
+            selection = input("Select the column(s) you want to view (name or #, input 'D' when done)")
+        
+        #amount = int(input('How many columns would you like to view'))
+        #userCol = input('What column would you like to query?:\n')
+        #colSelection.append(userCol)
         column_string = ", ".join(colSelection)       
         colQuery = f'SELECT {column_string} FROM "{activeUser}"'
-
 
         cursor.execute(colQuery)
 
