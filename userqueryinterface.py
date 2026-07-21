@@ -14,10 +14,11 @@ activeUser = ''
 while activeUser != "exit":
     cursor.execute(userQuery)
     tableList = cursor.fetchall()
-    print("Available tables:")
     for i in tableList:
         print(i[0])
-    activeUser = input("What table would you like to query? (type 'exit' to exit) ")
+    
+    print("\n")
+    activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     
     tableColumns=f"PRAGMA table_info({activeUser});"
     cursor.execute(tableColumns)
@@ -25,10 +26,15 @@ while activeUser != "exit":
     raw_results = cursor.fetchall()
     column_names = [col[1] for col in raw_results]
     
-    print("Available columns:")
+    print(f"\nYou are querying {activeUser} in {fileName}:\n")
+    print("Available columns: \n")
     for i in column_names:
         print(i)
-    column = input('What column would you like to query?:')
+    
+    print("\n")
+    print("Please enter your query in the following format:" \
+    "[column_name] ")
+    column = input('What column would you like to query?:\n')
 
     if activeUser != "exit":
         
