@@ -8,8 +8,6 @@ keywordList = []
 
 
 
-print(f"You are querying {fileName}. You can query the following keywords: ")
-
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
 activeUser = ''
