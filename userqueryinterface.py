@@ -53,4 +53,3 @@ while activeUser != "exit":
     for i in data:
         print(i)
 
- 
