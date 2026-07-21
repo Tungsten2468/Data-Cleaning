@@ -1,4 +1,6 @@
 import _sqlite3 as SQ
+import sys
+
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -10,7 +12,9 @@ print("You may query the following tables: \n")
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
 
-
+def checkActive():
+    if activeUser =='exit':
+        sys.exit()
 
 
 
@@ -25,6 +29,12 @@ while activeUser != "exit":
     print("\n")
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     
+    checkActive()
+
+    if activeUser == 'syn' or activeUser == 'empty' or activeUser == 's' or activeUser == 'e':
+        activeUser = 'empty_synthetic_data'
+
+
     if activeUser != "exit":
          
         tableColumns=f"PRAGMA table_info({activeUser});"
@@ -40,8 +50,7 @@ while activeUser != "exit":
     
     print("\n")
     
-    column = input('What column would you like to query?:\n')
-    print(f"\nYou are querying {column} from {activeUser} in {fileName}\n")
+
     action = input("What would you like to do?\n" \
     "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter")
 
@@ -49,8 +58,13 @@ while activeUser != "exit":
         userQuery = f'SELECT * FROM {activeUser}'
         cursor.execute(userQuery)
         data = cursor.fetchall()
-        for i in data:
-            print(i)
+        for row in data:
+            print(row) 
+        continue
+
+    column = input('What column would you like to query?:\n')
+    print(f"\nYou are querying {column} from {activeUser} in {fileName}\n")
+
 
     userQuery = f'SELECT {column} FROM {activeUser}'
     cursor.execute(userQuery)
