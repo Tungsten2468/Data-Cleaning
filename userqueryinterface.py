@@ -17,6 +17,17 @@ def checkActive():
         sys.exit()
 
 
+def showColumns():
+        tableColumns=f"PRAGMA table_info({activeUser});"
+        cursor.execute(tableColumns)
+
+        raw_results = cursor.fetchall()
+        column_names = [col[1] for col in raw_results]
+    
+        print(f"\nYou are querying {activeUser} in {fileName}:\n")
+        print("Available columns: \n")
+        for i in column_names:
+            print (i)
 
 activeUser = ''
 
@@ -37,10 +48,13 @@ while activeUser != "exit":
     print("\n")
     
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
-    while checkExists(activeUser, tableList) == False:
-        print("\nThe input you entered is invalid. Check your spelling and that your input exists, then try again.\n")
-        for e in tableList:
-            print(e[0])
+    if activeUser == 'empty_synthetic_data' or activeUser == 'syn' or activeUser == 'empty' or activeUser == 's' or activeUser == 'e':
+        activeUser = 'empty_synthetic_data'
+
+    elif activeUser == 'organized_data' or activeUser == 'org' or activeUser == 'o' or activeUser == 'original' or activeUser == 'organized':
+        activeUser = 'organized_data'
+    else:
+        print('Invalid table. Check spelling.')
         activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     
     checkActive()
@@ -48,25 +62,15 @@ while activeUser != "exit":
     if activeUser == 'syn' or activeUser == 'empty' or activeUser == 's' or activeUser == 'e':
         activeUser = 'empty_synthetic_data'
 
+    if activeUser == 'org' or activeUser == 'o' or activeUser == 'original' or activeUser == 'organized':
+        activeUser = 'organized_data'
 
-    if activeUser != "exit":
-         
-        tableColumns=f"PRAGMA table_info({activeUser});"
-        cursor.execute(tableColumns)
-
-        raw_results = cursor.fetchall()
-        column_names = [col[1] for col in raw_results]
-    
-        print(f"\nYou are querying {activeUser} in {fileName}:\n")
-        print("Available columns: \n")
-        for i in column_names:
-            print(i)
-    
-    print("\n")
     
 
     action = input("What would you like to do?\n" \
-    "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter")
+    "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter, (V)view")
+
+
 
     if action.upper()[0] == 'A':
         userQuery = f'SELECT * FROM {activeUser}'
@@ -75,6 +79,25 @@ while activeUser != "exit":
         for row in data:
             print(row) 
         continue
+
+    if action.upper()[0] == 'V':
+        amount = int(input('How many columns would you like to view'))
+        colSelection= []
+        for col in range(amount-1):
+            showColumns()
+            userCol = input('What column would you like to query?:\n')
+            colSelection.append(userCol)
+        column_string = ", ".join(colSelection)       
+        colQuery = f'SELECT {column_string} FROM "{activeUser}"'
+
+
+        cursor.execute(colQuery)
+
+            
+
+
+
+
 
     column = input('What column would you like to query?:\n')
     print(f"\nYou are querying {column} from {activeUser} in {fileName}\n")
@@ -85,4 +108,6 @@ while activeUser != "exit":
     data = cursor.fetchall()
     for i in data:
         print(i)
+
+
 
