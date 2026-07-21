@@ -15,11 +15,25 @@ activeUser = ''
 while activeUser != "exit":
     cursor.execute(userQuery)
     tableList = cursor.fetchall()
+    print("Available tables:")
     for i in tableList:
         print(i[0])
     activeUser = input("What table would you like to query? (type 'exit' to exit) ")
+    
+    tableColumns=f"PRAGMA table_info({activeUser});"
+    cursor.execute(tableColumns)
+
+    raw_results = cursor.fetchall()
+    column_names = [col[1] for col in raw_results]
+    
+    print("Available columns:")
+    for i in column_names:
+        print(i)
+    column = input('What column would you like to query?:')
+
     if activeUser != "exit":
-        userQuery = f'SELECT * FROM {activeUser}'
+        
+        userQuery = f'SELECT {column} FROM {activeUser}'
         cursor.execute(userQuery)
         data = cursor.fetchall()
         for i in data:
