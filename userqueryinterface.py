@@ -9,12 +9,15 @@ print("You may query the following tables: \n")
 
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
-
-
-
-
-
 activeUser = ''
+
+def checkExists(input, checkAgainst):
+    if(input == 'exit'):
+        return True
+    for i in checkAgainst:
+        if(i == input):
+            return True
+    return False
 
 while activeUser != "exit":
     cursor.execute(userQuery)
@@ -23,7 +26,13 @@ while activeUser != "exit":
         print(i[0])
     
     print("\n")
+    
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
+    while checkExists(activeUser, tableList) == False:
+        print("\nThe input you entered is invalid. Check your spelling and that your input exists, then try again.\n")
+        for e in tableList:
+            print(e[0])
+        activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     
     if activeUser != "exit":
          
