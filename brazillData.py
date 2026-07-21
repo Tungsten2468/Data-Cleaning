@@ -44,13 +44,13 @@ queryOrderAmount = '''SELECT
                     COUNT(i.order_id) as c
                     FROM olist_orders_dataset i'''
 queryProducts = """
-    SELECT 
+    SELECT
         t.product_category_name_english,
         COUNT(i.product_id) as sales_count
     FROM olist_order_items_dataset i
-    JOIN olist_products_dataset p 
+    JOIN olist_products_dataset p
         ON i.product_id = p.product_id
-    JOIN product_category_name_translation t 
+    JOIN product_category_name_translation t
         ON p.product_category_name = t.product_category_name
     GROUP BY p.product_category_name
     ORDER BY sales_count DESC
@@ -102,17 +102,17 @@ queryOrderEachMonth = '''SELECT
                         FROM olist_orders_dataset i
                         GROUP BY month
                         '''
-newtable = ''' SELECT 
-    i.customer_state,p.payment_type, 
-    p.payment_installments, 
-    SUM(a.price) AS product_value, 
-    a.freight_value, 
-    p.payment_value AS total_payment, 
-    r.review_score, 
-    o.order_purchase_timestamp AS purchase_date, 
+newtable = ''' SELECT
+    i.customer_state,p.payment_type,
+    p.payment_installments,
+    SUM(a.price) AS product_value,
+    a.freight_value,
+    p.payment_value AS total_payment,
+    r.review_score,
+    o.order_purchase_timestamp AS purchase_date,
     CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
     CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
-    FROM olist_customers_dataset i 
+    FROM olist_customers_dataset i
     JOIN olist_orders_dataset o
         ON i.customer_id = o.customer_id
     JOIN olist_order_items_dataset a
@@ -123,6 +123,51 @@ newtable = ''' SELECT
         ON o.order_id = p.order_id
     GROUP BY o.order_id
     LIMIT ?
+    '''
+pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS
+SELECT
+    i.customer_state,p.payment_type,
+    p.payment_installments,
+    ROUND(SUM(a.price),2) AS product_value,
+    ROUND(SUM(a.freight_value), 2) AS freight_value,  
+    ROUND(p.payment_value, 2) AS total_payment,
+    r.review_score,
+    o.order_purchase_timestamp AS purchase_date,
+    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
+    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
+    FROM olist_customers_dataset i
+    JOIN olist_orders_dataset o
+        ON i.customer_id = o.customer_id
+
+
+    JOIN olist_order_items_dataset a
+        ON o.order_id = a.order_id
+    JOIN olist_order_reviews_dataset r
+        ON o.order_id = r.order_id
+    JOIN olist_order_payments_dataset p
+        ON o.order_id = p.order_id
+    WHERE o.order_status = 'delivered'
+
+
+
+
+        AND a.price >= 0
+        AND a.freight_value >= 0
+        AND p.payment_value >= 0
+ 
+        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
+ 
+        AND o.order_delivered_customer_date IS NOT NULL
+    GROUP BY
+    o.order_id,
+    i.customer_state,
+    p.payment_type,
+    p.payment_installments,
+    p.payment_value,
+    r.review_score,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date
+    ORDER BY purchase_date ASC
     '''
 queryMostCommonPM = '''SELECT
                         i.payment_type, COUNT(*) AS paymentTCounts
@@ -136,9 +181,20 @@ queryMostCommonStates = '''SELECT
                         GROUP BY i.customer_state
                         ORDER BY stateCounts DESC
                         '''
+synqueryMostCommonStates = '''SELECT
+                        i.customer_state, COUNT(*) AS stateCounts
+                        FROM empty_synthetic_data i
+                        GROUP BY i.customer_state
+                        ORDER BY stateCounts DESC
+                        '''
 queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
+                        GROUP BY i.review_score
+                        ORDER BY reviewScoreCount DESC'''
+synqueryReviewDist = '''SELECT
+                        i.review_score, COUNT(*) AS reviewScoreCount
+                        FROM empty_synthetic_data i
                         GROUP BY i.review_score
                         ORDER BY reviewScoreCount DESC'''
 queryMeanPV = '''SELECT
@@ -194,6 +250,11 @@ queryPaymentTypes = '''SELECT
                         FROM olist_order_payments_dataset i
                         GROUP BY i.payment_type
                         ORDER BY payment_type_count DESC'''
+synqueryPaymentTypes = '''SELECT
+                        i.payment_type, COUNT (*) AS payment_type_count
+                        FROM empty_synthetic_data i
+                        GROUP BY i.payment_type
+                        ORDER BY payment_type_count DESC'''
 queryAllOrg = "SELECT * FROM organized_data"
 queryMaxInstallmentAmnt = '''SELECT
                                 i.payment_installments,
@@ -207,8 +268,23 @@ queryDeliveryDays = '''SELECT
                         FROM organized_data i
                         GROUP BY i.delivery_days
                         ORDER BY countsHaveThisNum DESC'''
-
-syn_table = ''' 
+queryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM organized_data i
+                    '''
+queryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM organized_data i
+                    ORDER BY i.total_payment ASC'''
+synqueryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM empty_synthetic_data i
+                    '''
+synqueryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM empty_synthetic_data i
+                    ORDER BY i.total_payment ASC'''
+syn_table = '''
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
     syn_order_id TEXT PRIMARY KEY,
     customer_state TEXT,
@@ -220,60 +296,39 @@ CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
     review_score INTEGER,
     purchase_date TEXT,
     delivery_days INTEGER);'''
-
-
-pp ='''CREATE TABLE IF NOT EXISTS external_db.organized_data AS 
-SELECT 
-    i.customer_state,p.payment_type, 
-    p.payment_installments, 
-    ROUND(SUM(a.price),2) AS product_value, 
-    ROUND(SUM(a.freight_value), 2) AS freight_value,  
-    ROUND(p.payment_value, 2) AS total_payment,
-    r.review_score, 
-    o.order_purchase_timestamp AS purchase_date, 
-    CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
-    CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
-    FROM olist_customers_dataset i 
-    JOIN olist_orders_dataset o
-        ON i.customer_id = o.customer_id
-
-    JOIN olist_order_items_dataset a
-        ON o.order_id = a.order_id
-    JOIN olist_order_reviews_dataset r
-        ON o.order_id = r.order_id
-    JOIN olist_order_payments_dataset p
-        ON o.order_id = p.order_id
-    WHERE o.order_status = 'delivered'
-
-
-        AND a.price >= 0 
-        AND a.freight_value >= 0
-        AND p.payment_value >= 0
- 
-        AND (CAST(julianday(o.order_delivered_customer_date) AS INTEGER) - CAST(julianday(o.order_purchase_timestamp) AS INTEGER)) >= 0
- 
-        AND o.order_delivered_customer_date IS NOT NULL
-    GROUP BY 
-    o.order_id,
-    i.customer_state,
-    p.payment_type,
-    p.payment_installments,
-    p.payment_value,
-    r.review_score,
-    o.order_purchase_timestamp,
-    o.order_delivered_customer_date
-    ORDER BY purchase_date ASC
-    '''
-
-summary_table= ''' 
-CREATE TABLE IF NOT EXISTS external_db.Summary_Statistics (
-    Variable TEXT,
-    Real_Mean INTERGER,
-    Synthetic_Mean INTERGER,
-    Real_Median INTERGER,
-    Synthetic_Median INTERGER); '''
-
 #------------------FUNCTIONS-------------------
+def distributionTable(title, query):
+    print(f"{title} distribution(percents):")
+    rows = curs.execute(query).fetchall()
+    headers = [desc[0] for desc in curs.description]
+
+
+    labels = [l[0] for l in rows]
+
+
+    total = 0
+    percents = []
+
+
+    for row in rows:
+        total += row[1]
+    for row in rows:
+        percentage = ((row[1] / total) * 100)/100
+        percents.append(round(percentage,2))
+    #print(viewQuery(query, lim))
+    #print(percents)
+    distTable = pan.DataFrame(
+        [percents],
+        columns=labels
+    )
+
+
+    print(distTable)
+       
+
+
+
+
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
     headers = [desc[0] for desc in curs.description]
@@ -338,21 +393,14 @@ def getTop(whatQuery, var1, var2, item1, item2, topNum):
         num +=1
         print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
 
-def barGraph(whatQuery, var1, var2, item1, item2):
-    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
-    x = []
-    y = []
-    for item in top_10_products:
-        if len(item[item1])>5:
-            x.append(item[item1][0:5]+"...")
-            y.append(item[item2])
-        else:
-            x.append(item[item1])
-            y.append(item[item2])
+def barGraph(query1,query2, var1, var2, item1, item2):
+    x= ["Original" ,"Synthetic"]
+    y = [curs.execute(query1).fetchone()[0], curs.execute(query2).fetchone()[0]]
+    
     plt.bar(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
-    plt.title("Top 10 "+var1+"(s) by "+var2)
+    plt.title('Original vs Synthetic Distribution by '+var2)
     plt.show()
 
 def lineGraph(whatQuery, var1, var2, item1, item2):
@@ -368,16 +416,23 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
-def pieChart(whatQuery, var1, var2, item1, item2):
-    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
-    x = []
-    y = []
-    for item in top_10_products:
-        x.append(item[item1])
-        y.append(item[item2])
-    plt.pie(y)
-    plt.legend(x,title='status', loc="upper left")
-    plt.title("Top 10 "+var1+"(s) by "+var2)
+def piegraph(type,whatQuery, var1, var2, item1, item2):
+    items = list(curs.execute(whatQuery))
+    sizes = calcDistributions(whatQuery)
+    
+    labels = [g[item1] for g in items]  
+    #sizes = [g[item2] for g in items]   
+
+    plt.figure(figsize=(10, 8))  
+
+    plt.pie(sizes, 
+        labels=labels, 
+        autopct='%1.1f%%', 
+        pctdistance=0.8,     
+        labeldistance=1.2) 
+
+    plt.title(type+' ' +var1 + " Breakdown")
+    plt.axis('equal')  
     plt.show()
 
 def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, dataLimit):
@@ -386,10 +441,13 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, da
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
-
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
     for entry in datas:
         op = random.randint(0, 1)
         randMod = random.randint(0, maxModifier)
+
 
         if op == 0:
             if entry - randMod >= 0:
@@ -399,11 +457,14 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, da
         elif op == 1:
             entry += randMod
 
+
         if entry < 0:
             entry = 0
 
+
         if isinstance(entry, float):
             entry = round(entry, 2)
+
 
         if(len(checkSynR) != 0):
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
@@ -415,14 +476,9 @@ def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, da
         else:
             limitHit += 1
 
+
     dataConnect.commit()
 
-def insertIntoTable(tableName, columnNames, values):
-    
-    for x in values:
-        query = f"INSERT INTO {tableName} ({columnNames}) VALUES (?)"
-        curs.execute(query,(x,))
-    dataConnect.commit()
 
 def generateSyntheticID(column,fakeTable,amount):
     syn = 'SYN'
@@ -440,12 +496,15 @@ def generateSyntheticID(column,fakeTable,amount):
         elif len(id) == 4 :
             id = id
 
+
         synID = syn + id
         synData.append(synID)
         id = int(id)
-        id +=1 
+        id +=1
+
 
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
 
     for sid in synData:
         if(len(checkSynR) != 0):  
@@ -454,13 +513,18 @@ def generateSyntheticID(column,fakeTable,amount):
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (sid,))
         rowID += 1
 
+
     dataConnect.commit()
+
 
 def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dataLimit):
     synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     rowID = 1
     limitHit = 1
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
     for synData in synthetic:
         if(len(checkSynR) != 0):  
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
@@ -472,12 +536,19 @@ def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dat
         else:
             limitHit += 1
 
+
     dataConnect.commit()
+
 
 def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
     tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
     rowID = 1
+    checkValue = list(curs.execute(f'SELECT {targetColumn} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
+
+
     for i in tableToGetFrom:
         resultantData = i[0] + i[1]
         if(len(checkSynR) != 0):  
@@ -488,18 +559,29 @@ def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
     dataConnect.commit()
 
 
+
+
 def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
     raw_rows = curs.execute(query).fetchall()
     datas = [row for row in raw_rows if row is not None]
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+
+    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
+    if(len(checkValue) != 0):
+        return
+
+
     rowID = 1
     limitHit = 1
     possibleVals = [val[0] for val in datas if val is not None]
-    
+   
     synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p= calcDistributions(query)))
+
 
     for entry in synthetic:
         entry = int(entry)
+
 
         if(len(checkSynR) != 0):
             curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
@@ -511,27 +593,24 @@ def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUS
         else:
             limitHit += 1
 
+
     dataConnect.commit()
 
-def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
+
+def generateSyntheticDates(fakeTable,column,start,end,amount): # year-month-dayThour:minute:second
     timeList= []
     rowID=1
     for x in range(amount):
         start_dt = np.datetime64(start)
         end_dt = np.datetime64(end)
-
-# Calculate total seconds between the limits
         total_seconds = (end_dt - start_dt).astype(int)
 
-# Pick a random second offset
         random_seconds_offset = np.random.randint(0, total_seconds)
-
-
-# Add the offset back to the start date
         random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
         date = str(random_datetime)
         date=date.replace('T',' ')
         timeList.append(date)
+
 
     checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
 
@@ -542,8 +621,8 @@ def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t 
             curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (time,))
         rowID += 1
 
+
     dataConnect.commit()
-    
 
 
 #------------------CALLS-------------------
@@ -596,12 +675,10 @@ new_db_path = os.path.join(dest_folder, "final_reports.db")
 curs.execute(f"ATTACH DATABASE '{new_db_path}' AS syn_db;")
 os.makedirs(dest_folder, exist_ok=True)
 curs.executescript(syn_table)
-curs.executescript(summary_table)
-dataConnect.commit()
 
-generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 50, 1000)
-generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 50, 1000)
-generateSyntheticNumericalData("organized_data", "total_payment", "empty_synthetic_data", 50, 1000)
+dataConnect.commit()
+generateSyntheticNumericalData("organized_data", "product_value", "empty_synthetic_data", 15, 1000)
+generateSyntheticNumericalData("organized_data", "freight_value", "empty_synthetic_data", 15, 1000)
 generateSyntheticCategoricalData("review_score", "empty_synthetic_data", ["5","4","3","2","1"], queryReviewDist, 1000)
 generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP","RJ","MG","RS","PR",
                                                                             "SC","BA","DF","ES","GO",
@@ -609,7 +686,7 @@ generateSyntheticCategoricalData("customer_state", "empty_synthetic_data", ["SP"
                                                                             "MS","PB","PI","RN","AL",
                                                                             "SE","TO","RO","AM","AC",
                                                                             "AP","RR"], queryMostCommonStates, 1000)
-generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["boleto","credit_card",
+generateSyntheticCategoricalData("payment_type", "empty_synthetic_data", ["credit_card","boleto",
                                                                           "debit_card","not_defined",
                                                                           "voucher"], queryPaymentTypes, 1000)
 generateSyntheticID('syn_order_id','empty_synthetic_data',1000)
@@ -619,19 +696,69 @@ generateRangedSyntheticData(queryMaxInstallmentAmnt,"payment_installments", "emp
 generateRangedSyntheticData(queryDeliveryDays, "delivery_days", "empty_synthetic_data", 1000)
 generateResultingSyntheticData("product_value", "freight_value", "total_payment", "empty_synthetic_data")
 
+print(viewQuery(queryMeanPV, -1))
+print(viewQuery(queryMeanFV, -1))
+print(viewQuery(queryMeanDT, -1))
 
-OmeanPV=(viewQuery(queryMeanPV, -1))
-OmeanFV=(viewQuery(queryMeanFV, -1))
-OmeanDT=(viewQuery(queryMeanDT, -1))
 
-SmeanPV=(viewQuery(synqueryMeanPV, -1))
-SmeanFV=(viewQuery(synqueryMeanFV, -1))
-SmeanDT=(viewQuery(synqueryMeanDT, -1))
+print(viewQuery(synqueryMeanPV, -1))
+print(viewQuery(synqueryMeanFV, -1))
+print(viewQuery(synqueryMeanDT, -1))
+
+compTable = pan.DataFrame(
+[['Product Value',
+  curs.execute(queryMeanPV).fetchone()[0],
+  curs.execute(synqueryMeanPV).fetchone()[0],
+  calcMedian(queryMedianPV)[0],
+  calcMedian(synqueryMedianPV)[0]],
+  ['Freight Value',
+   curs.execute(queryMeanFV).fetchone()[0],
+   curs.execute(synqueryMeanFV).fetchone()[0],
+   calcMedian(queryMedianFV)[0],
+   calcMedian(synqueryMedianFV)[0]],
+   ['Total Payment',
+   curs.execute(queryMeanTP).fetchone()[0],
+   curs.execute(synqueryMeanTP).fetchone()[0],
+   calcMedian(queryMedianTP)[0],
+   calcMedian(synqueryMedianTP)[0]],
+   ['Delivery Days',
+   curs.execute(queryMeanDT).fetchone()[0],
+   curs.execute(synqueryMeanDT).fetchone()[0],
+   calcMedian(queryMedianDT)[0],
+   calcMedian(synqueryMedianDT)[0]]],
+
+
+columns=['Variable','Real Mean', 'Synthetic Mean', 'Real Median', 'Synthetic Median'])
+
+
+
+
+#realScatter = plt.bar()
+
+
+print(compTable)
+print((distributionTable("Real Payment Types",queryPaymentTypes)))
+print((distributionTable("Synthetic Payment Types",synqueryPaymentTypes)))
+
+
+print((distributionTable("Real Customer States",queryMostCommonStates)))
+print((distributionTable("Synthetic Customer States",synqueryMostCommonStates)))
+
+
+print((distributionTable("Real Review Score",queryReviewDist)))
+print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
+
+print(viewQuery(queryPaymentTypes, -1))
+
+piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Orginal',queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+piegraph('Synthetic',synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+
 
 Vars =['Product_Value', 'Freight_Value', 'Total_Payment', 'Delivery_Days']
 
 
-insertIntoTable('Summary_Statistics','Variable',Vars)
 
 dataConnect.close()
 
