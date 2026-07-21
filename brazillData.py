@@ -192,6 +192,12 @@ queryReviewDist = '''SELECT
                         FROM olist_order_reviews_dataset i
                         GROUP BY i.review_score
                         ORDER BY reviewScoreCount DESC'''
+
+orgqueryReviewDist = '''SELECT
+                        i.review_score, COUNT(*) AS reviewScoreCount
+                        FROM organized_data i
+                        GROUP BY i.review_score
+                        ORDER BY reviewScoreCount DESC'''
 synqueryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM empty_synthetic_data i
@@ -296,39 +302,7 @@ CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
     review_score INTEGER,
     purchase_date TEXT,
     delivery_days INTEGER);'''
-#------------------FUNCTIONS-------------------
-def distributionTable(title, query):
-    print(f"{title} distribution(percents):")
-    rows = curs.execute(query).fetchall()
-    headers = [desc[0] for desc in curs.description]
-
-
-    labels = [l[0] for l in rows]
-
-
-    total = 0
-    percents = []
-
-
-    for row in rows:
-        total += row[1]
-    for row in rows:
-        percentage = ((row[1] / total) * 100)/100
-        percents.append(round(percentage,2))
-    #print(viewQuery(query, lim))
-    #print(percents)
-    distTable = pan.DataFrame(
-        [percents],
-        columns=labels
-    )
-
-
-    print(distTable)
-       
-
-
-
-
+##------------------FUNCTIONS-------------------
 def calcDistributions(query):
     rows = curs.execute(query).fetchall()
     headers = [desc[0] for desc in curs.description]
@@ -393,14 +367,21 @@ def getTop(whatQuery, var1, var2, item1, item2, topNum):
         num +=1
         print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
 
-def barGraph(query1,query2, var1, var2, item1, item2):
-    x= ["Original" ,"Synthetic"]
-    y = [curs.execute(query1).fetchone()[0], curs.execute(query2).fetchone()[0]]
-    
+def barGraph(whatQuery, var1, var2, item1, item2):
+    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
+    x = []
+    y = []
+    for item in top_10_products:
+        if len(item[item1])>5:
+            x.append(item[item1][0:5]+"...")
+            y.append(item[item2])
+        else:
+            x.append(item[item1])
+            y.append(item[item2])
     plt.bar(x,y)
     plt.xlabel(var1)
     plt.ylabel(var2)
-    plt.title('Original vs Synthetic Distribution by '+var2)
+    plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
 
 def lineGraph(whatQuery, var1, var2, item1, item2):
@@ -415,6 +396,211 @@ def lineGraph(whatQuery, var1, var2, item1, item2):
     plt.ylabel(var2)
     plt.title("Top 10 "+var1+"(s) by "+var2)
     plt.show()
+
+def pieChart(whatQuery, var1, var2, item1, item2):
+    top_10_products = curs.execute(whatQuery, (10,)).fetchall()
+    x = []
+    y = []
+    for item in top_10_products:
+        x.append(item[item1])
+        y.append(item[item2])
+    plt.pie(y)
+    plt.legend(x,title='status', loc="upper left")
+    plt.title("Top 10 "+var1+"(s) by "+var2)
+    plt.show()
+
+def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, dataLimit):
+    raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
+    datas = [row[0] for row in raw_rows if row[0] is not None]
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    rowID = 1
+    limitHit = 1
+
+    for entry in datas:
+        op = random.randint(0, 1)
+        randMod = random.randint(0, maxModifier)
+
+        if op == 0:
+            if entry - randMod >= 0:
+                entry -= randMod
+            else:
+                entry += randMod
+        elif op == 1:
+            entry += randMod
+
+        if entry < 0:
+            entry = 0
+
+        if isinstance(entry, float):
+            entry = round(entry, 2)
+
+        if(len(checkSynR) != 0):
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
+        rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
+
+    dataConnect.commit()
+
+def insertIntoTable(tableName, columnNames, values):
+    
+    for x in values:
+        query = f"INSERT INTO {tableName} ({columnNames}) VALUES (?)"
+        curs.execute(query,(x,))
+    dataConnect.commit()
+
+def generateSyntheticID(column,fakeTable,amount):
+    syn = 'SYN'
+    id = 1
+    rowID = 1
+    synData = []
+    for i in range(amount):
+        id = str(id)
+        if len(id) == 1 :
+            id = '000'+id
+        elif len(id) == 2 :
+            id = '00'+id
+        elif len(id) == 3 :
+            id = '0'+id
+        elif len(id) == 4 :
+            id = id
+
+        synID = syn + id
+        synData.append(synID)
+        id = int(id)
+        id +=1 
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+    for sid in synData:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (sid, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (sid,))
+        rowID += 1
+
+    dataConnect.commit()
+
+def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dataLimit):
+    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    rowID = 1
+    limitHit = 1
+    for synData in synthetic:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (synData,))
+        rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
+
+    dataConnect.commit()
+
+def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
+    rowID = 1
+    for i in tableToGetFrom:
+        resultantData = i[0] + i[1]
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {targetColumn} = ? WHERE rowid = ?", (resultantData, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({targetColumn}) VALUES (?)", (resultantData,))
+        rowID += 1
+    dataConnect.commit()
+
+
+def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
+    raw_rows = curs.execute(query).fetchall()
+    datas = [row for row in raw_rows if row is not None]
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+    rowID = 1
+    limitHit = 1
+    possibleVals = [val[0] for val in datas if val is not None]
+    
+    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p= calcDistributions(query)))
+
+    for entry in synthetic:
+        entry = int(entry)
+
+        if(len(checkSynR) != 0):
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
+        rowID += 1
+        if(limitHit == dataLimit):
+            break
+        else:
+            limitHit += 1
+
+    dataConnect.commit()
+
+def generateSyntheticDates(fakeTable,column,start,end,amount): # seperated by t example: year-month-dayThour:minute:second
+    timeList= []
+    rowID=1
+    for x in range(amount):
+        start_dt = np.datetime64(start)
+        end_dt = np.datetime64(end)
+
+# Calculate total seconds between the limits
+        total_seconds = (end_dt - start_dt).astype(int)
+
+# Pick a random second offset
+        random_seconds_offset = np.random.randint(0, total_seconds)
+
+
+# Add the offset back to the start date
+        random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
+        date = str(random_datetime)
+        date=date.replace('T',' ')
+        timeList.append(date)
+
+    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
+
+    for time in timeList:
+        if(len(checkSynR) != 0):  
+            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (time, rowID))
+        else:
+            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (time,))
+        rowID += 1
+
+    dataConnect.commit()
+    
+def distributionTable(title, query):
+    print(f"{title} distribution(percents):")
+    rows = curs.execute(query).fetchall()
+    headers = [desc[0] for desc in curs.description]
+
+
+    labels = [l[0] for l in rows]
+
+
+    total = 0
+    percents = []
+
+
+    for row in rows:
+        total += row[1]
+    for row in rows:
+        percentage = ((row[1] / total) * 100)/100
+        percents.append(round(percentage,2))
+    #print(viewQuery(query, lim))
+    #print(percents)
+    distTable = pan.DataFrame(
+        [percents],
+        columns=labels
+    )
+
+
+    print(distTable)
+       
 
 def piegraph(type,whatQuery, var1, var2, item1, item2):
     items = list(curs.execute(whatQuery))
@@ -434,197 +620,52 @@ def piegraph(type,whatQuery, var1, var2, item1, item2):
     plt.title(type+' ' +var1 + " Breakdown")
     plt.axis('equal')  
     plt.show()
-
-def generateSyntheticNumericalData(realTable, column, fakeTable, maxModifier, dataLimit):
-    raw_rows = curs.execute(f"SELECT {column} FROM {realTable}").fetchall()
-    datas = [row[0] for row in raw_rows if row[0] is not None]
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    rowID = 1
-    limitHit = 1
-    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
-    if(len(checkValue) != 0):
-        return
-    for entry in datas:
-        op = random.randint(0, 1)
-        randMod = random.randint(0, maxModifier)
+    
 
 
-        if op == 0:
-            if entry - randMod >= 0:
-                entry -= randMod
-            else:
-                entry += randMod
-        elif op == 1:
-            entry += randMod
-
-
-        if entry < 0:
-            entry = 0
-
-
-        if isinstance(entry, float):
-            entry = round(entry, 2)
-
-
-        if(len(checkSynR) != 0):
-            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
-        rowID += 1
-        if(limitHit == dataLimit):
-            break
-        else:
-            limitHit += 1
-
-
-    dataConnect.commit()
-
-
-def generateSyntheticID(column,fakeTable,amount):
-    syn = 'SYN'
-    id = 1
-    rowID = 1
-    synData = []
-    for i in range(amount):
-        id = str(id)
-        if len(id) == 1 :
-            id = '000'+id
-        elif len(id) == 2 :
-            id = '00'+id
-        elif len(id) == 3 :
-            id = '0'+id
-        elif len(id) == 4 :
-            id = id
-
-
-        synID = syn + id
-        synData.append(synID)
-        id = int(id)
-        id +=1
-
-
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-
-
-    for sid in synData:
-        if(len(checkSynR) != 0):  
-            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (sid, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (sid,))
-        rowID += 1
-
-
-    dataConnect.commit()
-
-
-def generateSyntheticCategoricalData(column, fakeTable, possibleVals, query, dataLimit):
-    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p=calcDistributions(query)))
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    rowID = 1
-    limitHit = 1
-    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
-    if(len(checkValue) != 0):
-        return
-    for synData in synthetic:
-        if(len(checkSynR) != 0):  
-            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (synData, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (synData,))
-        rowID += 1
-        if(limitHit == dataLimit):
-            break
-        else:
-            limitHit += 1
-
-
-    dataConnect.commit()
-
-
-def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-    tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
-    rowID = 1
-    checkValue = list(curs.execute(f'SELECT {targetColumn} FROM {fakeTable}').fetchall())
-    if(len(checkValue) != 0):
+def review_piegraph(type,whatQuery, item1, item2):
+  
+    items = list(curs.execute(whatQuery))
+    
+    # item1 = Label index (e.g., '5 Stars', '4 Stars')
+    # item2 = Count index (e.g., 1200, 450)
+    labels = [row[item1] for row in items]
+    sizes = [row[item2] for row in items]
+    
+    if not sizes or sum(sizes) == 0:
+        print("No review data found.")
         return
 
+    
+    review_colors = ['#2ae364', '#9ce32a', '#e3ba2a', '#e36e2a', '#e32a2a'] 
+    
+    
+    plt.figure(figsize=(10, 7))
+    
+    
+    wedges, texts, autotexts = plt.pie(
+        sizes, 
+        labels=labels, 
+        autopct='%1.1f%%', 
+        colors=review_colors[:len(sizes)], 
+        pctdistance=0.75,   
+        labeldistance=1.12, 
+        startangle=90       
+    )
+    
+    
+    for t in texts:
+        t.set_fontsize(11)
+    for at in autotexts:
+        at.set_fontsize(10)
+        at.set_weight('bold')
+        at.set_color('white') 
 
-    for i in tableToGetFrom:
-        resultantData = i[0] + i[1]
-        if(len(checkSynR) != 0):  
-            curs.execute(f"UPDATE {fakeTable} SET {targetColumn} = ? WHERE rowid = ?", (resultantData, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({targetColumn}) VALUES (?)", (resultantData,))
-        rowID += 1
-    dataConnect.commit()
-
-
-
-
-def generateRangedSyntheticData(query, column, fakeTable, dataLimit): #QUERY MUST ORDER DATA BY ASCENDING FOR ACCURATE RANGE
-    raw_rows = curs.execute(query).fetchall()
-    datas = [row for row in raw_rows if row is not None]
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-
-
-    checkValue = list(curs.execute(f'SELECT {column} FROM {fakeTable}').fetchall())
-    if(len(checkValue) != 0):
-        return
-
-
-    rowID = 1
-    limitHit = 1
-    possibleVals = [val[0] for val in datas if val is not None]
-   
-    synthetic = list(np.random.choice(possibleVals, size=getAmount(queryAllOrg), p= calcDistributions(query)))
-
-
-    for entry in synthetic:
-        entry = int(entry)
-
-
-        if(len(checkSynR) != 0):
-            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (entry, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (entry,))
-        rowID += 1
-        if(limitHit == dataLimit):
-            break
-        else:
-            limitHit += 1
-
-
-    dataConnect.commit()
-
-
-def generateSyntheticDates(fakeTable,column,start,end,amount): # year-month-dayThour:minute:second
-    timeList= []
-    rowID=1
-    for x in range(amount):
-        start_dt = np.datetime64(start)
-        end_dt = np.datetime64(end)
-        total_seconds = (end_dt - start_dt).astype(int)
-
-        random_seconds_offset = np.random.randint(0, total_seconds)
-        random_datetime = start_dt + np.timedelta64(random_seconds_offset, 's')
-        date = str(random_datetime)
-        date=date.replace('T',' ')
-        timeList.append(date)
-
-
-    checkSynR = list(curs.execute("SELECT * FROM "+fakeTable))
-
-    for time in timeList:
-        if(len(checkSynR) != 0):  
-            curs.execute(f"UPDATE {fakeTable} SET {column} = ? WHERE rowid = ?", (time, rowID))
-        else:
-            curs.execute(f"INSERT INTO {fakeTable} ({column}) VALUES (?)", (time,))
-        rowID += 1
-
-
-    dataConnect.commit()
-
-
+    plt.title(type+"Customer Review Score Distribution", fontsize=15, pad=25, weight='bold')
+    plt.axis('equal')       
+    plt.tight_layout()      
+    
+    plt.show()
 #------------------CALLS-------------------
 print(viewQuery(queryMostCommonPM, 5))
 #print(viewQuery(queryReviewDist, -1))
@@ -750,14 +791,12 @@ print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 
 print(viewQuery(queryPaymentTypes, -1))
 
-piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-piegraph('Orginal',queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
-piegraph('Synthetic',synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+#piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+#piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+#review_piegraph('Orginal',orgqueryReviewDist,0, 1)
+#review_piegraph('Synthetic',synqueryReviewDist, 0, 1)
 
-
-Vars =['Product_Value', 'Freight_Value', 'Total_Payment', 'Delivery_Days']
-
+calcDistributions(orgqueryReviewDist)
 
 
 dataConnect.close()
