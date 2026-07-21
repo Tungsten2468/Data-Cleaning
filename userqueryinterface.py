@@ -1,12 +1,13 @@
 import _sqlite3 as SQ
 
-fileName = "final_reports_db"
-dataConnect = SQ.connect(f"syn_output_data/{fileName}.sqlite")
+fileName = "final_reports.db"
+dataConnect = SQ.connect(f"syn_output_data/{fileName}")
 cursor = dataConnect.cursor()
 
-keywordList = []
-
-
 print(f"You are querying {fileName}. You can query the following keywords: ")
+for i in cursor.execute("PRAGMA table_info(empty_synthetic_data)").fetchall():
+    print((i[1]))
+
+print("\n")
 
 userQuery = input("Enter your query using the following format: ")
