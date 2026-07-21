@@ -9,6 +9,11 @@ print("You may query the following tables: \n")
 
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
+
+
+
+
+
 activeUser = ''
 
 while activeUser != "exit":
@@ -38,9 +43,9 @@ while activeUser != "exit":
     column = input('What column would you like to query?:\n')
     print(f"\nYou are querying {column} from {activeUser} in {fileName}\n")
     action = input("What would you like to do?\n" \
-    "(A)view all columns, (R)get range, (O)order, (C)calculate, (F)filter")
+    "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter")
 
-    if action == 'A' or action == 'a':
+    if action.upper()[0] == 'A':
         userQuery = f'SELECT * FROM {activeUser}'
         cursor.execute(userQuery)
         data = cursor.fetchall()
