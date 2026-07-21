@@ -44,13 +44,13 @@ queryOrderAmount = '''SELECT
                     COUNT(i.order_id) as c
                     FROM olist_orders_dataset i'''
 queryProducts = """
-    SELECT 
+    SELECT
         t.product_category_name_english,
         COUNT(i.product_id) as sales_count
     FROM olist_order_items_dataset i
-    JOIN olist_products_dataset p 
+    JOIN olist_products_dataset p
         ON i.product_id = p.product_id
-    JOIN product_category_name_translation t 
+    JOIN product_category_name_translation t
         ON p.product_category_name = t.product_category_name
     GROUP BY p.product_category_name
     ORDER BY sales_count DESC
@@ -102,17 +102,17 @@ queryOrderEachMonth = '''SELECT
                         FROM olist_orders_dataset i
                         GROUP BY month
                         '''
-newtable = ''' SELECT 
-    i.customer_state,p.payment_type, 
-    p.payment_installments, 
-    SUM(a.price) AS product_value, 
-    a.freight_value, 
-    p.payment_value AS total_payment, 
-    r.review_score, 
-    o.order_purchase_timestamp AS purchase_date, 
+newtable = ''' SELECT
+    i.customer_state,p.payment_type,
+    p.payment_installments,
+    SUM(a.price) AS product_value,
+    a.freight_value,
+    p.payment_value AS total_payment,
+    r.review_score,
+    o.order_purchase_timestamp AS purchase_date,
     CAST(julianday(o.order_delivered_customer_date) AS INTEGER) -
     CAST(julianday(o.order_purchase_timestamp)  AS INTEGER) AS delivery_days
-    FROM olist_customers_dataset i 
+    FROM olist_customers_dataset i
     JOIN olist_orders_dataset o
         ON i.customer_id = o.customer_id
     JOIN olist_order_items_dataset a
@@ -136,9 +136,20 @@ queryMostCommonStates = '''SELECT
                         GROUP BY i.customer_state
                         ORDER BY stateCounts DESC
                         '''
+synqueryMostCommonStates = '''SELECT
+                        i.customer_state, COUNT(*) AS stateCounts
+                        FROM empty_synthetic_data i
+                        GROUP BY i.customer_state
+                        ORDER BY stateCounts DESC
+                        '''
 queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
+                        GROUP BY i.review_score
+                        ORDER BY reviewScoreCount DESC'''
+synqueryReviewDist = '''SELECT
+                        i.review_score, COUNT(*) AS reviewScoreCount
+                        FROM empty_synthetic_data i
                         GROUP BY i.review_score
                         ORDER BY reviewScoreCount DESC'''
 queryMeanPV = '''SELECT
@@ -194,6 +205,11 @@ queryPaymentTypes = '''SELECT
                         FROM olist_order_payments_dataset i
                         GROUP BY i.payment_type
                         ORDER BY payment_type_count DESC'''
+synqueryPaymentTypes = '''SELECT
+                        i.payment_type, COUNT (*) AS payment_type_count
+                        FROM empty_synthetic_data i
+                        GROUP BY i.payment_type
+                        ORDER BY payment_type_count DESC'''
 queryAllOrg = "SELECT * FROM organized_data"
 queryMaxInstallmentAmnt = '''SELECT
                                 i.payment_installments,
@@ -207,6 +223,22 @@ queryDeliveryDays = '''SELECT
                         FROM organized_data i
                         GROUP BY i.delivery_days
                         ORDER BY countsHaveThisNum DESC'''
+queryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM organized_data i
+                    '''
+queryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM organized_data i
+                    ORDER BY i.total_payment ASC'''
+synqueryMeanTP = '''SELECT
+                    ROUND(AVG(i.total_payment), 2) AS mean_total_payment
+                    FROM empty_synthetic_data i
+                    '''
+synqueryMedianTP = '''SELECT
+                    i.total_payment
+                    FROM empty_synthetic_data i
+                    ORDER BY i.total_payment ASC'''
 
 syn_table = ''' 
 CREATE TABLE IF NOT EXISTS external_db.empty_synthetic_data (
@@ -337,6 +369,36 @@ def getTop(whatQuery, var1, var2, item1, item2, topNum):
     for item in top:
         num +=1
         print(num,f"{var1}: {item[item1]} | {var2} : {item[item2]}")
+
+def piegraph(type,whatQuery, var1, var2, item1, item2):
+    # 1. Execute and immediately save results to a list so you can loop twice
+    items = list(curs.execute(whatQuery))
+    
+    # 2. Calculate the total using the specific number index (item2)
+    total = sum(x[item2] for x in items)
+    
+    # Avoid DivisionByZero errors if the table is empty
+    if total == 0:
+        print("No data found to plot.")
+        return
+
+    # 3. Extract your data for the Matplotlib chart
+    labels = [g[item1] for g in items]  # Pulls the names (e.g., 'credit_card')
+    sizes = [g[item2] for g in items]   # Pulls the numbers (e.g., 76795)
+
+    # 4. Generate and display the Matplotlib pie chart
+ 
+    plt.figure(figsize=(10, 8))  # Larger canvas gives text breathing room
+
+    plt.pie(sizes, 
+        labels=labels, 
+        autopct='%1.1f%%', 
+        pctdistance=0.8,      # Moves percentages closer to the edge
+        labeldistance=1.2) 
+
+    plt.title(type+' ' +var1 + " Breakdown")
+    plt.axis('equal')  
+    plt.show()
 
 def barGraph(whatQuery, var1, var2, item1, item2):
     top_10_products = curs.execute(whatQuery, (10,)).fetchall()
@@ -631,6 +693,11 @@ Vars =['Product_Value', 'Freight_Value', 'Total_Payment', 'Delivery_Days']
 
 
 insertIntoTable('Summary_Statistics','Variable',Vars)
+
+piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Orginal',queryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
+piegraph('Synthetic',synqueryReviewDist, "Review Score", "Amount of Reviews", 0, 1)
 
 dataConnect.close()
 
