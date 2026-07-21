@@ -4,9 +4,8 @@ fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
 cursor = dataConnect.cursor()
 
-keywordList = []
-
-
+print(f"\nYou are querying {fileName}.\n")
+print("You may query the following tables: \n")
 
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 
@@ -38,3 +37,5 @@ while activeUser != "exit":
         data = cursor.fetchall()
         for i in data:
             print(i)
+
+ 
