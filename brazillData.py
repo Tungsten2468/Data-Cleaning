@@ -191,18 +191,18 @@ queryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM olist_order_reviews_dataset i
                         GROUP BY i.review_score
-                        ORDER BY reviewScoreCount DESC'''
+                        ORDER BY i.review_score DESC'''
 
 orgqueryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM organized_data i
                         GROUP BY i.review_score
-                        ORDER BY reviewScoreCount DESC'''
+                        ORDER BY i.review_score DESC'''
 synqueryReviewDist = '''SELECT
                         i.review_score, COUNT(*) AS reviewScoreCount
                         FROM empty_synthetic_data i
                         GROUP BY i.review_score
-                        ORDER BY reviewScoreCount DESC'''
+                        ORDER BY i.review_score DESC'''
 queryMeanPV = '''SELECT
                     ROUND(AVG(i.product_value), 2) AS mean_product_value
                     FROM organized_data i
@@ -661,7 +661,7 @@ def review_piegraph(type,whatQuery, item1, item2):
         at.set_weight('bold')
         at.set_color('white') 
 
-    plt.title(type+"Customer Review Score Distribution", fontsize=15, pad=25, weight='bold')
+    plt.title(type+" Customer Review Score Distribution", fontsize=15, pad=25, weight='bold')
     plt.axis('equal')       
     plt.tight_layout()      
     
@@ -786,15 +786,15 @@ print((distributionTable("Real Customer States",queryMostCommonStates)))
 print((distributionTable("Synthetic Customer States",synqueryMostCommonStates)))
 
 
-print((distributionTable("Real Review Score",queryReviewDist)))
+print((distributionTable("Real Review Score",orgqueryReviewDist)))
 print((distributionTable("Synthetic Review Score",synqueryReviewDist)))
 
 print(viewQuery(queryPaymentTypes, -1))
 
-#piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-#piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
-#review_piegraph('Orginal',orgqueryReviewDist,0, 1)
-#review_piegraph('Synthetic',synqueryReviewDist, 0, 1)
+piegraph('Original',queryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+piegraph('Synthetic',synqueryPaymentTypes, "Payment Type", "Amount of Payments", 0, 1)
+review_piegraph('Orginal',orgqueryReviewDist,0, 1)
+review_piegraph('Synthetic',synqueryReviewDist, 0, 1)
 
 calcDistributions(orgqueryReviewDist)
 
