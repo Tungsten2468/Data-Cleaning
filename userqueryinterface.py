@@ -1,6 +1,7 @@
 import _sqlite3 as SQ
 import sys
 import pandas as pan
+import csv
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -16,6 +17,35 @@ def contains(container, targetElement):
         if(i == targetElement):
             return True
     return False
+
+def csvMaker(tableName):
+    folderpath ="queryfolder/"+tableName+".csv"
+    cursor.execute(f"SELECT * FROM '{tableName}'")
+
+
+    with open(folderpath, "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.writer(csv_file)
+    
+
+        headers = [description[0] for description in cursor.description]
+        writer.writerow(headers)
+    
+
+        writer.writerows(cursor.fetchall())
+
+
+def viewCSV(filename):
+    data = []
+    dataFile = open(f"queryfolder/"+filename+'.csv', newline="")
+    fileRead = csv.DictReader(dataFile)
+
+    for entry in fileRead:
+        data.append(entry)
+
+    dataFile.close()
+    for g in data:
+        print(g)
+
 
 def checkActive():
     if activeUser =='exit':
@@ -57,16 +87,24 @@ def checkExists(input, checkAgainst):
     return False
 
 def createColumnTable(listOfColumns, table, rowLimit):
+    rowLimit = int(rowLimit) 
+
     pan.set_option("display.max_rows", None)
     pan.set_option("display.max_columns", None)
+
     columnTable = pan.DataFrame(columns=listOfColumns)
+
     for i in listOfColumns:
-        if(not rowLimit == 0):
+        if rowLimit != 0:
             rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
         else:
             rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
+
         columnTable[i] = [r[0] for r in rows]
+
     return columnTable
+
+
 #-----PROGRAM-----
 while activeUser != "exit":
     optionList = getTables()
@@ -128,13 +166,32 @@ while activeUser != "exit":
             continue
         if action.upper()[0] == 'V':
             print(createColumnTable(colSelection, activeUser, limit))
+        if action.upper()[0] == 'C':
+                calualation = input('What would you like to Calculate?:\n'\
+                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
+                if calualation.upper()[0] == 'T':
+                    print("\n**Note that categorical data types cannot be summed up.**\n")
+                    for column in colSelection:
+                        cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
+                        total_stock = cursor.fetchone()[0]
+                        print(f"Total of {column}: {total_stock}")
+                if calualation.upper()[0] == 'H':
+                    for column in colSelection: 
+                        cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
+                        maxstock=cursor.fetchone()[0]
+                        print(f"Max of {column}: {maxstock}")
+                if calualation.upper()[0] == 'L':
+                    for column in colSelection: 
+                        cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
+                        minstock=cursor.fetchone()[0]
+                        print(f"Lowest of {column}: {minstock}")
+                if calualation.upper()[0] == 'A':
+                    for column in colSelection: 
+                        cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
+                        avgStock=cursor.fetchone()[0]
+                        print(f"Average of {column}: {avgStock}")
 
         action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection, (Q)quit\n")
     activeUser = 'exit'
 print("You have quit.")
-
-      
-
-
-
