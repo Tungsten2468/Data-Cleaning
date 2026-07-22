@@ -22,6 +22,13 @@ def getTables():
         tableList.append(i[0])
     return tableList
 
+def newQuery():
+        con = input('\nNew Query? (Y/N):\n')
+        if con.upper()[0] == 'N':
+            sys.exit()
+        if con.upper()[0] == 'Y':
+            return 
+
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
     cursor.execute(tableColumns)
@@ -79,18 +86,19 @@ while activeUser != "exit":
         data = cursor.fetchall()
         for row in data:
             print(row) 
-        con = input('\nNew Query? (Y/N):\n')
-        if con.upper()[0] == 'N':
-            sys.exit()
-        if con.upper()[0] == 'Y':
-            continue
+        newQuery()
+        continue
 
     if action.upper()[0] == 'V':
         optionList = getColumns()
         colSelection = []
+        ind =1
+        
+        amount = int(input('\nHow many columns would you like to view: \n'))
         showOptions(optionList)
         selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-        while selection.upper() != 'D':
+        while selection.upper() != 'D'and ind != amount:
+            ind+=1
             if(selection.isdigit):
                 colSelection.append(optionList.pop(int(selection)))
             elif(selection.upper() != 'A'):
@@ -101,6 +109,12 @@ while activeUser != "exit":
                 break
             showOptions(optionList)
             selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+
+
+
+
+
+
 
         print("\nPlease wait, fetching data...\n")
         print(createColumnTable(colSelection, activeUser))
