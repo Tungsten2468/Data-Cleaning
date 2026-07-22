@@ -68,11 +68,27 @@ while activeUser != "exit":
 
     print(f"\nYou are querying {activeUser} in {fileName}")
 
-    action = input("What would you like to do?\n" \
-    "(A)all columns, (R)range, (O)order, (C)calculate, (F)filter, (V)view")
+    optionList = getColumns()
+    colSelection = []
+    showOptions(optionList)
+    selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+    while selection.upper() != 'D':
+        if(selection.isdigit):
+            colSelection.append(optionList.pop(int(selection)))
+        elif(selection.upper() != 'A'):
+            colSelection.append(selection)
+        else:
+            for i in optionList:
+                colSelection.append(i)
+            break
+        showOptions(optionList)
+        selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
 
+    action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
+        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
+    
     print("\n")
-
+    
     if action.upper()[0] == 'A':
         userQuery = f'SELECT * FROM {activeUser}'
         cursor.execute(userQuery)
@@ -81,33 +97,10 @@ while activeUser != "exit":
             print(row) 
         continue
 
-    if action.upper()[0] == 'V':
-        optionList = getColumns()
-        colSelection = []
-        showOptions(optionList)
-        selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-        while selection.upper() != 'D':
-            if(selection.isdigit):
-                colSelection.append(optionList.pop(int(selection)))
-            elif(selection.upper() != 'A'):
-                colSelection.append(selection)
-            else:
-                for i in optionList:
-                    colSelection.append(i)
-                break
-            showOptions(optionList)
-            selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+    print("\nPlease wait, fetching data...\n")
+    print(createColumnTable(colSelection, activeUser))
 
-        print("\nPlease wait, fetching data...\n")
-        print(createColumnTable(colSelection, activeUser))
-        
-        #amount = int(input('How many columns would you like to view'))
-        #userCol = input('What column would you like to query?:\n')
-        #colSelection.append(userCol)
-        column_string = ", ".join(colSelection)       
-        colQuery = f'SELECT {column_string} FROM "{activeUser}"'
-
-        cursor.execute(colQuery)
+      
 
 
 
