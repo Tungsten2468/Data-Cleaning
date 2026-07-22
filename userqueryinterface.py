@@ -1,19 +1,24 @@
 import _sqlite3 as SQ
 import sys
 import pandas as pan
-import csv
-
 
 fileName = "final_reports"
-
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
 cursor = dataConnect.cursor()
 
 print(f"\nYou are querying {fileName}.\n")
 print("You may query the following tables (name or #): \n")
 
+userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
+#-----FUNCTIONS-----
+def contains(container, targetElement):
+    for i in container:
+        if(i == targetElement):
+            return True
+    return False
+
 def csvMaker(tableName):
-    folderpath ="/Users/uc25261/Desktop/Data-Cleaning/queryfolder/"+tableName+".csv"
+    folderpath ="queryfolder/"+tableName+".csv"
     cursor.execute(f"SELECT * FROM '{tableName}'")
 
 
@@ -40,13 +45,6 @@ def viewCSV(filename):
     for g in data:
         print(g)
 
-
-#-----FUNCTIONS-----
-def contains(container, targetElement):
-    for i in container:
-        if(i == targetElement):
-            return True
-    return False
 
 def checkActive():
     if activeUser =='exit':
@@ -100,7 +98,6 @@ def createColumnTable(listOfColumns, table, rowLimit):
     return columnTable
 #-----PROGRAM-----
 while activeUser != "exit":
-    
     optionList = getTables()
     showOptions(optionList)
     
@@ -117,7 +114,6 @@ while activeUser != "exit":
     print(f"\nYou are querying {activeUser} in {fileName}")
 
     optionList = getColumns()
-    
     colSelection = []
     showOptions(optionList)
     selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
@@ -138,9 +134,14 @@ while activeUser != "exit":
             limit = ''.join(selection[start:end])
             del selection[start-1:end+1]
             break
-        showOptions(optionList)
-        selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-
+    for char in selection: #second loop extract column numbers
+        if(char.isdigit()):
+            colSelection.append(optionList[int(char)])
+        elif(selection == ',' or selection == ' '):
+            continue
+        elif(char.upper() == 'A'):
+            colSelection.append(optionList)
+    print(colSelection)
     action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
     
@@ -157,7 +158,26 @@ while activeUser != "exit":
     if action.upper()[0] == 'V':
         print(createColumnTable(colSelection, activeUser, limit))
 
-      
-
-
-
+    if action.upper()[0] == 'C':
+        calualation = input('What would you like to Calculate?:\n'\
+                "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
+        if calualation.upper()[0] == 'T':
+            for column in colSelection:
+                cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
+                total_stock = cursor.fetchone()[0]
+                print(f"Total of {column}: {total_stock}")
+        if calualation.upper()[0] == 'H':
+            for column in colSelection: 
+                cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
+                maxstock=cursor.fetchone()[0]
+                print(f"Max of {column}: {maxstock}")
+        if calualation.upper()[0] == 'L':
+            for column in colSelection: 
+                cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
+                minstock=cursor.fetchone()[0]
+                print(f"Lowest of {column}: {minstock}")
+        if calualation.upper()[0] == 'A':
+            for column in colSelection: 
+                cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
+                avgStock=cursor.fetchone()[0]
+                print(f"Average of {column}: {avgStock}")
