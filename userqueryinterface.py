@@ -1,6 +1,6 @@
 import _sqlite3 as SQ
 import sys
-
+import pandas as pan
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -44,6 +44,14 @@ def checkExists(input, checkAgainst):
             return True
     return False
 
+def createColumnTable(listOfColumns, table):
+    pan.set_option("display.max_rows", None)
+    pan.set_option("display.max_columns", None)
+    columnTable = pan.DataFrame(columns=listOfColumns)
+    for i in listOfColumns:
+        columnTable[i] = cursor.execute(f"SELECT {i} FROM {table}").fetchall()[0]
+    return columnTable
+
 while activeUser != "exit":
     optionList = getTables()
     showOptions(optionList)
@@ -77,14 +85,21 @@ while activeUser != "exit":
         optionList = getColumns()
         colSelection = []
         showOptions(optionList)
-        selection = input("\nSelect the column(s) you want to view (name or #, input 'D' when done)")
-        while selection != 'D':
-            if(selection[0].isdigit):
+        selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+        while selection.upper() != 'D':
+            if(selection.isdigit):
                 colSelection.append(optionList.pop(int(selection)))
-            else:
+            elif(selection.upper() != 'A'):
                 colSelection.append(selection)
+            else:
+                for i in optionList:
+                    colSelection.append(i)
+                break
             showOptions(optionList)
-            selection = input("Select the column(s) you want to view (name or #, input 'D' when done)")
+            selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+
+        print("\nPlease wait, fetching data...\n")
+        print(createColumnTable(colSelection, activeUser))
         
         #amount = int(input('How many columns would you like to view'))
         #userCol = input('What column would you like to query?:\n')
@@ -93,22 +108,6 @@ while activeUser != "exit":
         colQuery = f'SELECT {column_string} FROM "{activeUser}"'
 
         cursor.execute(colQuery)
-
-            
-
-
-
-
-
-    column = input('What column would you like to query?:\n')
-    print(f"\nYou are querying {column} from {activeUser} in {fileName}\n")
-
-
-    userQuery = f'SELECT {column} FROM {activeUser}'
-    cursor.execute(userQuery)
-    data = cursor.fetchall()
-    for i in data:
-        print(i)
 
 
 
