@@ -71,7 +71,11 @@ while activeUser != "exit":
         data = cursor.fetchall()
         for row in data:
             print(row) 
-        continue
+        con = input('\nNew Query? (Y/N):\n')
+        if con.upper()[0] == 'N':
+            sys.exit()
+        if con.upper()[0] == 'Y':
+            continue
 
     if action.upper()[0] == 'V':
         optionList = getColumns()
@@ -94,7 +98,6 @@ while activeUser != "exit":
 
         cursor.execute(colQuery)
 
-            
 
 
 
