@@ -22,6 +22,13 @@ def getTables():
         tableList.append(i[0])
     return tableList
 
+def newQuery():
+        con = input('\nNew Query? (Y/N):\n')
+        if con.upper()[0] == 'N':
+            sys.exit()
+        if con.upper()[0] == 'Y':
+            return 
+
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
     cursor.execute(tableColumns)
@@ -95,6 +102,7 @@ while activeUser != "exit":
         data = cursor.fetchall()
         for row in data:
             print(row) 
+        newQuery()
         continue
 
     print("\nPlease wait, fetching data...\n")
