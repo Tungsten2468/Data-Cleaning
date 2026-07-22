@@ -41,7 +41,12 @@ def viewCSV(filename):
         print(g)
 
 
-
+#-----FUNCTIONS-----
+def contains(container, targetElement):
+    for i in container:
+        if(i == targetElement):
+            return True
+    return False
 
 def checkActive():
     if activeUser =='exit':
@@ -82,14 +87,18 @@ def checkExists(input, checkAgainst):
             return True
     return False
 
-def createColumnTable(listOfColumns, table):
+def createColumnTable(listOfColumns, table, rowLimit):
     pan.set_option("display.max_rows", None)
     pan.set_option("display.max_columns", None)
     columnTable = pan.DataFrame(columns=listOfColumns)
     for i in listOfColumns:
-        columnTable[i] = cursor.execute(f"SELECT {i} FROM {table}").fetchall()[0]
+        if(rowLimit != 0):
+            rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
+        else:
+            rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
+        columnTable[i] = [r[0] for r in rows]
     return columnTable
-
+#-----PROGRAM-----
 while activeUser != "exit":
     
     optionList = getTables()
@@ -110,24 +119,27 @@ while activeUser != "exit":
     optionList = getColumns()
     
     colSelection = []
-    ind =1
-    showOptions(optionList)  
-    amount = int(input('\nHow many columns would you like to view: \n'))
-    showOptions(optionList) 
-    selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-    while selection.upper() != 'D' and ind != amount:
-        ind+=1
-        if(selection.isdigit):
-            colSelection.append(optionList.pop(int(selection)))
-        elif(selection.upper() != 'A'):
-            colSelection.append(selection)
-        else:
-            for i in optionList:
-                colSelection.append(i)
+    showOptions(optionList)
+    selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+    "[column_number,column_number,...,(limit)]\n"
+    "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    while(contains(selection, '(') == False and contains(selection, ')') == False):
+        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
+        selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+            "[column_number,column_number,...,l=#]\n"
+            "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    charIndex = 0
+    selection = list(selection)
+    limit = '' #keep as string initially so numbers can be concactenated
+    for char in selection: #first loop extracts the limit, wherever it was specified in the string
+        if(char == '('):
+            start = selection.index('(') + 1
+            end = selection.index(')', start)
+            limit = ''.join(selection[start:end])
+            del selection[start-1:end+1]
             break
         showOptions(optionList)
         selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-
 
     action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
@@ -142,26 +154,8 @@ while activeUser != "exit":
             print(row) 
         newQuery()
         continue
-
     if action.upper()[0] == 'V':
-        tablename= input ('Name your table: \n')
-        column_string = ", ".join(colSelection)  
-        print(column_string)     
-        colQuery = f'''CREATE TABLE {tablename} AS
-        SELECT {column_string} 
-        FROM "{activeUser}"'''
-        cursor.execute(f'DROP TABLE IF EXISTS {tablename}')
-        cursor.execute(colQuery)
-        
-        dataConnect.commit()
-        csvMaker(tablename)
-        viewCSV(tablename)
-
-    
-
-
-
-
+        print(createColumnTable(colSelection, activeUser, limit))
 
       
 
