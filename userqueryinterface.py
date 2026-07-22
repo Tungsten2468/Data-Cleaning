@@ -146,7 +146,31 @@ while activeUser != "exit":
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
     
     print("\n")
-    
+
+    if action.upper().startswith('E'):       
+        while True:
+            print(f"\nCurrent columns: {colSelection}")
+            edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, or (B)Back: ").upper()
+            
+            if edit.startswith('B'):
+                action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
+                "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
+                break
+                
+            elif edit.startswith('R'):
+                removal = input("Enter column indices to remove (separated by commas):\n")
+                indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+                for idx in indices:
+                    if 0 <= idx < len(colSelection):
+                        colSelection.pop(idx)
+
+            elif edit.startswith('A'):
+                new_col = input("Enter the name of the column to add:\n").strip()
+                if new_col:
+                    colSelection.append(new_col)
+
+
+
     if action.upper()[0] == 'A':
         userQuery = f'SELECT * FROM {activeUser}'
         cursor.execute(userQuery)
@@ -155,8 +179,10 @@ while activeUser != "exit":
             print(row) 
         newQuery()
         continue
+
     if action.upper()[0] == 'V':
         print(createColumnTable(colSelection, activeUser, limit))
+        newQuery()
 
     if action.upper()[0] == 'C':
         calualation = input('What would you like to Calculate?:\n'\
@@ -181,3 +207,10 @@ while activeUser != "exit":
                 cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
                 avgStock=cursor.fetchone()[0]
                 print(f"Average of {column}: {avgStock}")
+        newQuery()
+
+
+    
+
+
+
