@@ -61,7 +61,7 @@ def createColumnTable(listOfColumns, table, rowLimit):
     pan.set_option("display.max_columns", None)
     columnTable = pan.DataFrame(columns=listOfColumns)
     for i in listOfColumns:
-        if(rowLimit != 0):
+        if(not rowLimit == 0):
             rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
         else:
             rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
@@ -93,7 +93,7 @@ while activeUser != "exit":
     while(contains(selection, '(') == False and contains(selection, ')') == False):
         print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
         selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
-            "[column_number,column_number,...,l=#]\n"
+            "[column_number,column_number,...,(limit)]\n"
             "Input column number as 'A' to view all columns and () as 0 for no limit\n")
     charIndex = 0
     selection = list(selection)
@@ -111,23 +111,28 @@ while activeUser != "exit":
         elif(selection == ',' or selection == ' '):
             continue
         elif(char.upper() == 'A'):
-            colSelection.append(optionList)
-    print(colSelection)
+            colSelection = optionList
     action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
-    
-    print("\n")
-    
-    if action.upper()[0] == 'A':
-        userQuery = f'SELECT * FROM {activeUser}'
-        cursor.execute(userQuery)
-        data = cursor.fetchall()
-        for row in data:
-            print(row) 
-        newQuery()
-        continue
-    if action.upper()[0] == 'V':
-        print(createColumnTable(colSelection, activeUser, limit))
+        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection, (Q)quit\n")
+
+    while action.upper() != 'Q':
+        print("\n")
+        
+        if action.upper()[0] == 'A':
+            userQuery = f'SELECT * FROM {activeUser}'
+            cursor.execute(userQuery)
+            data = cursor.fetchall()
+            for row in data:
+                print(row) 
+            newQuery()
+            continue
+        if action.upper()[0] == 'V':
+            print(createColumnTable(colSelection, activeUser, limit))
+
+        action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
+        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection, (Q)quit\n")
+    activeUser = 'exit'
+print("You have quit.")
 
       
 
