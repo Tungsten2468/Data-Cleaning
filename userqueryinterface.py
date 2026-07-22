@@ -1,15 +1,46 @@
 import _sqlite3 as SQ
 import sys
 import pandas as pan
+import csv
+
 
 fileName = "final_reports"
+
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
 cursor = dataConnect.cursor()
 
 print(f"\nYou are querying {fileName}.\n")
 print("You may query the following tables (name or #): \n")
 
-userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
+def csvMaker(tableName):
+    folderpath ="/Users/uc25261/Desktop/Data-Cleaning/queryfolder/"+tableName+".csv"
+    cursor.execute(f"SELECT * FROM '{tableName}'")
+
+
+    with open(folderpath, "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.writer(csv_file)
+    
+
+        headers = [description[0] for description in cursor.description]
+        writer.writerow(headers)
+    
+
+        writer.writerows(cursor.fetchall())
+
+
+def viewCSV(filename):
+    data = []
+    dataFile = open(f"queryfolder/"+filename+'.csv', newline="")
+    fileRead = csv.DictReader(dataFile)
+
+    for entry in fileRead:
+        data.append(entry)
+
+    dataFile.close()
+    for g in data:
+        print(g)
+
+
 
 
 def checkActive():
@@ -60,6 +91,7 @@ def createColumnTable(listOfColumns, table):
     return columnTable
 
 while activeUser != "exit":
+    
     optionList = getTables()
     showOptions(optionList)
     
@@ -76,10 +108,15 @@ while activeUser != "exit":
     print(f"\nYou are querying {activeUser} in {fileName}")
 
     optionList = getColumns()
+    
     colSelection = []
-    showOptions(optionList)
+    ind =1
+    showOptions(optionList)  
+    amount = int(input('\nHow many columns would you like to view: \n'))
+    showOptions(optionList) 
     selection = input("\nSelect the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
-    while selection.upper() != 'D':
+    while selection.upper() != 'D' and ind != amount:
+        ind+=1
         if(selection.isdigit):
             colSelection.append(optionList.pop(int(selection)))
         elif(selection.upper() != 'A'):
@@ -90,6 +127,7 @@ while activeUser != "exit":
             break
         showOptions(optionList)
         selection = input("Select the column(s) you want to view (name or #, 'A' for all, input 'D' when done)")
+
 
     action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
@@ -105,8 +143,25 @@ while activeUser != "exit":
         newQuery()
         continue
 
-    print("\nPlease wait, fetching data...\n")
-    print(createColumnTable(colSelection, activeUser))
+    if action.upper()[0] == 'V':
+        tablename= input ('Name your table: \n')
+        column_string = ", ".join(colSelection)  
+        print(column_string)     
+        colQuery = f'''CREATE TABLE {tablename} AS
+        SELECT {column_string} 
+        FROM "{activeUser}"'''
+        cursor.execute(f'DROP TABLE IF EXISTS {tablename}')
+        cursor.execute(colQuery)
+        
+        dataConnect.commit()
+        csvMaker(tablename)
+        viewCSV(tablename)
+
+    
+
+
+
+
 
       
 
