@@ -115,7 +115,7 @@ def actionChoice():
     infos = selectionHandler()
     optionList = getColumns()
     action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
 
     while action.upper() != 'Q':
         print("\n")
@@ -158,7 +158,7 @@ def actionChoice():
                         print(f"Average of {column}: {avgStock}")
                 if calualation.startswith('B'):
                         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (Q)quit")
                         break
         if action.upper().startswith('E'):       
                 while True:
@@ -235,7 +235,7 @@ def newQuery():
             print("You have quit.")
             sys.exit()
         if con.upper()[0] == 'Y':
-            return begin() begin()
+            return begin()
 
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
