@@ -45,64 +45,11 @@ def viewCSV(filename):
     for g in data:
         print(g)
 
-
-def checkActive():
-    if activeUser =='exit':
-        sys.exit()
-
-def getTables():
-    tableList = []
-    for i in cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").fetchall():
-        tableList.append(i[0])
-    return tableList
-
-def newQuery():
-        con = input('\nNew Query? (Y/N):\n')
-        if con.upper()[0] == 'N':
-            sys.exit()
-        if con.upper()[0] == 'Y':
-            return 
-
-def getColumns():
-    tableColumns=f"PRAGMA table_info({activeUser});"
-    cursor.execute(tableColumns)
-
-    raw_results = cursor.fetchall()
-    column_names = [col[1] for col in raw_results]
-    return column_names
-
-def showOptions(options):
-        for i in options:
-            print (options.index(i), i)
-
-activeUser = ''
-
-def checkExists(input, checkAgainst):
-    if(input == 'exit'):
-        return True
-    for i in checkAgainst:
-        if(i == input):
-            return True
-    return False
-
-def createColumnTable(listOfColumns, table, rowLimit):
-    pan.set_option("display.max_rows", None)
-    pan.set_option("display.max_columns", None)
-    columnTable = pan.DataFrame(columns=listOfColumns)
-    for i in listOfColumns:
-        if(rowLimit != 0):
-            rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
-        else:
-            rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
-        columnTable[i] = [r[0] for r in rows]
-    return columnTable
-#-----PROGRAM-----
-while activeUser != "exit":
-    optionList = getTables()
-    showOptions(optionList)
-    
-    print("\n")
-    
+def begin():
+    global activeUser
+    global optionList
+    global colSelection
+    global limit
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     if(activeUser[0].isdigit()):
         activeUser = optionList[int(activeUser)]
@@ -141,23 +88,24 @@ while activeUser != "exit":
             continue
         elif(char.upper() == 'A'):
             colSelection.append(optionList)
+    actionChoice()
+
+def actionChoice():
     print(colSelection)
     action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
     
     print("\n")
-
     if action.upper().startswith('E'):       
         while True:
             print(f"\nCurrent columns: {colSelection}")
             edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, or (B)Back: ").upper()
             
             if edit.startswith('B'):
-                action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
-                "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection")
-                break
+                actionChoice()
                 
             elif edit.startswith('R'):
+                print(f"\nCurrent columns: {colSelection}")
                 removal = input("Enter column indices to remove (separated by commas):\n")
                 indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
                 for idx in indices:
@@ -165,49 +113,122 @@ while activeUser != "exit":
                         colSelection.pop(idx)
 
             elif edit.startswith('A'):
+                for y in colSelection:
+                    for x in optionList:
+                        if x == y:
+                            optionList.remove(x)
+                showOptions(optionList)
                 new_col = input("Enter the name of the column to add:\n").strip()
                 if new_col:
                     colSelection.append(new_col)
 
 
 
-    if action.upper()[0] == 'A':
-        userQuery = f'SELECT * FROM {activeUser}'
-        cursor.execute(userQuery)
-        data = cursor.fetchall()
-        for row in data:
-            print(row) 
-        newQuery()
-        continue
+    if action.upper().startswith('A'):
+            userQuery = f'SELECT * FROM {activeUser}'
+            cursor.execute(userQuery)
+            data = cursor.fetchall()
+            for row in data:
+                print(row) 
+            newQuery()
+            
 
-    if action.upper()[0] == 'V':
-        print(createColumnTable(colSelection, activeUser, limit))
-        newQuery()
+    if action.upper().startswith('V'):
+            print(createColumnTable(colSelection, activeUser, 0))
+            newQuery()
 
-    if action.upper()[0] == 'C':
-        calualation = input('What would you like to Calculate?:\n'\
-                "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
-        if calualation.upper()[0] == 'T':
-            for column in colSelection:
-                cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
-                total_stock = cursor.fetchone()[0]
-                print(f"Total of {column}: {total_stock}")
-        if calualation.upper()[0] == 'H':
-            for column in colSelection: 
-                cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
-                maxstock=cursor.fetchone()[0]
-                print(f"Max of {column}: {maxstock}")
-        if calualation.upper()[0] == 'L':
-            for column in colSelection: 
-                cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
-                minstock=cursor.fetchone()[0]
-                print(f"Lowest of {column}: {minstock}")
-        if calualation.upper()[0] == 'A':
-            for column in colSelection: 
-                cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
-                avgStock=cursor.fetchone()[0]
-                print(f"Average of {column}: {avgStock}")
-        newQuery()
+    if action.upper().startswith('C'):
+            calualation = input('What would you like to Calculate?:\n'\
+                    "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
+            if calualation.upper()[0] == 'T':
+                for column in colSelection:
+                    cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
+                    total_stock = cursor.fetchone()[0]
+                    print(f"Total of {column}: {total_stock}")
+            if calualation.upper()[0] == 'H':
+                for column in colSelection: 
+                    cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
+                    maxstock=cursor.fetchone()[0]
+                    print(f"Max of {column}: {maxstock}")
+            if calualation.upper()[0] == 'L':
+                for column in colSelection: 
+                    cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
+                    minstock=cursor.fetchone()[0]
+                    print(f"Lowest of {column}: {minstock}")
+            if calualation.upper()[0] == 'A':
+                for column in colSelection: 
+                    cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
+                    avgStock=cursor.fetchone()[0]
+                    print(f"Average of {column}: {avgStock}")
+
+
+def checkActive():
+    if activeUser =='exit':
+        sys.exit()
+
+def getTables():
+    tableList = []
+    for i in cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").fetchall():
+        tableList.append(i[0])
+    return tableList
+
+def newQuery():
+        con = input('\nNew Query? (Y/N):\n')
+        if con.upper()[0] == 'N':
+            sys.exit()
+        if con.upper()[0] == 'Y':
+            return begin()
+
+def getColumns():
+    tableColumns=f"PRAGMA table_info({activeUser});"
+    cursor.execute(tableColumns)
+
+    raw_results = cursor.fetchall()
+    column_names = [col[1] for col in raw_results]
+    return column_names
+
+def showOptions(options):
+        for i in options:
+            print (options.index(i), i)
+
+activeUser = ''
+
+def checkExists(input, checkAgainst):
+    if(input == 'exit'):
+        return True
+    for i in checkAgainst:
+        if(i == input):
+            return True
+    return False
+
+def createColumnTable(listOfColumns, table, rowLimit):
+    pan.set_option("display.max_rows", None)
+    pan.set_option("display.max_columns", None)
+    columnTable = pan.DataFrame(columns=listOfColumns)
+    for i in listOfColumns:
+        if(rowLimit != 0):
+            rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
+        else:
+            rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
+        columnTable[i] = [r[0] for r in rows]
+    return columnTable
+#-----PROGRAM-----
+
+
+
+
+
+while activeUser != "exit":
+    global optionList
+    optionList = getTables()
+    showOptions(optionList)
+    
+    print("\n")
+    
+    begin()
+
+    
+        
 
 
     
