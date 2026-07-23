@@ -1,6 +1,8 @@
 import _sqlite3 as SQ
 import sys
 import pandas as pan
+import csv
+import pyreadline3 as readline
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -172,6 +174,7 @@ def actionChoice():
                         newLimit = input('Enter your new limit (no formatting, just digits)\n:')
                         infos[1] = newLimit
                     elif edit.startswith('A'):
+                                          
                         for x in colSelection:
                             for y in optionList:
                                 if x == y:
@@ -191,6 +194,10 @@ def actionChoice():
                         infos[2] = newSelecton 
 
 
+
+
+
+
 def checkActive():
     if activeUser =='exit':
         sys.exit()
@@ -206,7 +213,7 @@ def newQuery():
         if con.upper()[0] == 'N':
             sys.exit()
         if con.upper()[0] == 'Y':
-            return begin()
+            return 
 
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
@@ -231,22 +238,29 @@ def checkExists(input, checkAgainst):
     return False
 
 def createColumnTable(listOfColumns, table, rowLimit):
+    rowLimit = int(rowLimit) 
+
     pan.set_option("display.max_rows", None)
     pan.set_option("display.max_columns", None)
+
     columnTable = pan.DataFrame(columns=listOfColumns)
+
     for i in listOfColumns:
-        if(rowLimit != 0):
+        if rowLimit != 0:
             rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
         else:
             rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
+
         columnTable[i] = [r[0] for r in rows]
+
     return columnTable
+
+
 #-----PROGRAM-----
 
 
 
 while activeUser != "exit":
-    global optionList
     optionList = getTables()
     showOptions(optionList)
     
