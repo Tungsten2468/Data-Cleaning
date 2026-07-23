@@ -204,43 +204,36 @@ while activeUser != "exit":
         if action.upper().startswith('E'):       
                 while True:
                     newOptions = getColumns()
+                    print(infos[0])
                     showOptions(newOptions)
                     print(f"Current Selection: {infos[2]}")
                     edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
                     
                     if edit.startswith('B'):
                         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        "(V)view, (C)calculations, (F)find range, (E)edit my 0selection, (Q)quit")
                         break
-                        
                     elif edit.startswith('R'):
                         removal = input("Enter column indices to remove (separated by commas):\n")
-                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()])
                         for idx in indices:
-                            if 0 <= idx < len(infos[0]):
-                                infos[0].pop(idx)
-                        newSelecton = ''
-                        for i in infos[0]:
-                            newSelecton = newSelecton + str(newOptions.index(i))
-                            if(infos[0].index(i) != len(infos[0]) - 1):
-                                newSelecton = newSelecton + ','
-                        newSelecton = newSelecton + f'({infos[1]})'
-                        infos[2] = newSelecton
+                            infos[0].remove(newOptions[idx])
                     elif edit.startswith('L'):
-                        newLimit = input('Enter your new limit (no formatting, just digits)\n:')
+                        newLimit = input('Enter your new limit (no formatting, just digits):\n')
                         infos[1] = newLimit
                     elif edit.startswith('A'):
                         showOptions(newOptions)
-                        new_col = input("Enter the name of the column to add:\n").strip()
+                        new_col = input("Enter the index of the column to add:\n").strip()
                         if new_col:
-                            infos[0].append(new_col)
-                        newSelecton = ''
-                        for i in infos[0]:
-                            newSelecton = newSelecton + str(newOptions.index(i))
-                            if(infos[0].index(i) != len(infos[0]) - 1):
-                                newSelecton = newSelecton + ','
-                        newSelecton = newSelecton + f'({infos[1]})'
-                        infos[2] = newSelecton                      
+                            infos[0].append(newOptions[int(new_col)])
+                    #rebuild the selection string
+                    newSelecton = ''
+                    for i in infos[0]:
+                        newSelecton = newSelecton + str(newOptions.index(i))
+                        if(infos[0].index(i) != len(infos[0]) - 1):
+                            newSelecton = newSelecton + ','
+                    newSelecton = newSelecton + f'({infos[1]})'
+                    infos[2] = newSelecton                
 
         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
         "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit\n")
