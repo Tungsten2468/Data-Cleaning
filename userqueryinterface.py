@@ -203,7 +203,9 @@ while activeUser != "exit":
                         print(f"Average of {column}: {avgStock}")
         if action.upper().startswith('E'):       
                 while True:
-                    print(f"\nCurrent selection: {infos[2]}")
+                    newOptions = getColumns()
+                    showOptions(newOptions)
+                    print(f"Current Selection: {infos[2]}")
                     edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
                     
                     if edit.startswith('B'):
@@ -212,7 +214,7 @@ while activeUser != "exit":
                         break
                         
                     elif edit.startswith('R'):
-                        showOptions(optionList)
+                        showOptions(newOptions)
                         removal = input("Enter column indices to remove (separated by commas):\n")
                         indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
                         for idx in indices:
@@ -220,7 +222,7 @@ while activeUser != "exit":
                                 infos[0].pop(idx)
                         newSelecton = ''
                         for i in infos[0]:
-                            newSelecton = newSelecton + str(optionList.index(i))
+                            newSelecton = newSelecton + str(newOptions.index(i))
                             if(infos[0].index(i) != len(infos[0]) - 1):
                                 newSelecton = newSelecton + ','
                         newSelecton = newSelecton + f'({infos[1]})'
@@ -228,15 +230,14 @@ while activeUser != "exit":
                     elif edit.startswith('L'):
                         newLimit = input('Enter your new limit (no formatting, just digits)\n:')
                         infos[1] = newLimit
-        
                     elif edit.startswith('A'):
-                        showOptions(optionList)
+                        showOptions(newOptions)
                         new_col = input("Enter the name of the column to add:\n").strip()
                         if new_col:
                             infos[0].append(new_col)
                         newSelecton = ''
                         for i in infos[0]:
-                            newSelecton = newSelecton + str(optionList.index(i))
+                            newSelecton = newSelecton + str(newOptions.index(i))
                             if(infos[0].index(i) != len(infos[0]) - 1):
                                 newSelecton = newSelecton + ','
                         newSelecton = newSelecton + f'({infos[1]})'
