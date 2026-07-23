@@ -15,6 +15,7 @@ print("You may query the following tables (name or #): \n")
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 #-----FUNCTIONS-----
 def selectionHandler():
+    global colSelection
     restultingInfo = []
     optionList = getColumns()
     colSelection = []
@@ -84,6 +85,121 @@ def viewCSV(filename):
     for g in data:
         print(g)
 
+def begin():
+    global activeUser
+  
+    global limit
+    activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
+    if(activeUser[0].isdigit()):
+        activeUser = optionList[int(activeUser)]
+    else:
+        activeUser = activeUser
+    
+    checkActive()
+
+
+    actionChoice()
+
+def actionChoice():
+    print(f"\nYou are querying {activeUser} in {fileName}")
+    #Remember that selection handler returns the following in the exact order: [columns selected, limit, original selection]
+    infos = selectionHandler()
+    optionList = getColumns()
+    action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+
+    while action.upper() != 'Q':
+        print("\n")
+        
+        if action.upper()[0] == 'A':
+            userQuery = f'SELECT * FROM {activeUser}'
+            cursor.execute(userQuery)
+            data = cursor.fetchall()
+            for row in data:
+                print(row) 
+            newQuery()
+            continue
+        if action.upper()[0] == 'V':
+            print(createColumnTable(infos[0], activeUser, infos[1]))
+        if action.upper()[0] == 'C':
+                calualation = input('What would you like to Calculate?:\n'\
+                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
+                if calualation.upper()[0] == 'T':
+                    print("\n**Note that categorical data types cannot be summed up.**\n")
+                    for column in infos[0]:
+                        cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
+                        total_stock = cursor.fetchone()[0]
+                        print(f"Total of {column}: {total_stock}")
+                if calualation.upper()[0] == 'H':
+                    for column in infos[0]: 
+                        cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
+                        maxstock=cursor.fetchone()[0]
+                        print(f"Max of {column}: {maxstock}")
+                if calualation.upper()[0] == 'L':
+                    for column in infos[0]: 
+                        cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
+                        minstock=cursor.fetchone()[0]
+                        print(f"Lowest of {column}: {minstock}")
+                if calualation.upper()[0] == 'A':
+                    for column in infos[0]: 
+                        cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
+                        avgStock=cursor.fetchone()[0]
+                        print(f"Average of {column}: {avgStock}")
+        if action.upper().startswith('E'):       
+                while True:
+                    newOptions = getColumns()
+                    showOptions(newOptions)
+                    print(f"Current Selection: {infos[2]}")
+                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
+                    
+                    if edit.startswith('B'):
+                        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        break
+                        
+                    elif edit.startswith('R'):
+                        print(colSelection)
+                        removal = input("Enter column indices to remove (separated by commas):\n")
+                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+                        for idx in indices:
+                            if 0 <= idx < len(infos[0]):
+                                infos[0].pop(idx)
+                        newSelecton = ''
+                        for i in infos[0]:
+                            newSelecton = newSelecton + str(newOptions.index(i))
+                            if(infos[0].index(i) != len(infos[0]) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({infos[1]})'
+                        infos[2] = newSelecton
+                    elif edit.startswith('L'):
+                        newLimit = input('Enter your new limit (no formatting, just digits)\n:')
+                        infos[1] = newLimit
+                    elif edit.startswith('A'):
+                                          
+                        for x in colSelection:
+                            for y in optionList:
+                                if x == y:
+                                    optionList.remove(x)
+
+                        showOptions(optionList)
+                        print(f'Current Selection:{colSelection}')
+                        new_col = input("Enter the name of the column to add:\n").strip()
+                        if new_col:
+                            infos[0].append(new_col)
+                        newSelecton = ''
+                        for i in infos[0]:
+                            newSelecton = newSelecton + str(newOptions.index(i))
+                            if(infos[0].index(i) != len(infos[0]) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({infos[1]})'
+                        infos[2] = newSelecton 
+        if action.upper().startswith('S'):
+            csvName = input('Please name your .CSV file:\n')
+            print("Saving...")
+            csvMaker(csvName, createColumnTable(infos[0], activeUser, infos[1]))
+            print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
+    print("You have quit.")
+    sys.exit()
 
 def checkActive():
     if activeUser =='exit':
@@ -150,96 +266,5 @@ while activeUser != "exit":
     
     print("\n")
     
-    activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
-    if(activeUser[0].isdigit()):
-        activeUser = optionList[int(activeUser)]
-    else:
-        activeUser = activeUser
-    
+    begin()
     checkActive()
-
-    print(f"\nYou are querying {activeUser} in {fileName}")
-    #Remember that selection handler returns the following in the exact order: [columns selected, limit, original selection]
-    infos = selectionHandler()
-    
-    action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV (Q)quit\n")
-
-    while action.upper() != 'Q':
-        print("\n")
-        
-        if action.upper()[0] == 'A':
-            userQuery = f'SELECT * FROM {activeUser}'
-            cursor.execute(userQuery)
-            data = cursor.fetchall()
-            for row in data:
-                print(row) 
-            newQuery()
-            continue
-        if action.upper()[0] == 'V':
-            print(createColumnTable(infos[0], activeUser, infos[1]))
-        if action.upper()[0] == 'C':
-                calualation = input('What would you like to Calculate?:\n'\
-                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
-                if calualation.upper()[0] == 'T':
-                    print("\n**Note that categorical data types cannot be summed up.**\n")
-                    for column in infos[0]:
-                        cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
-                        total_stock = cursor.fetchone()[0]
-                        print(f"Total of {column}: {total_stock}")
-                if calualation.upper()[0] == 'H':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
-                        maxstock=cursor.fetchone()[0]
-                        print(f"Max of {column}: {maxstock}")
-                if calualation.upper()[0] == 'L':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
-                        minstock=cursor.fetchone()[0]
-                        print(f"Lowest of {column}: {minstock}")
-                if calualation.upper()[0] == 'A':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
-                        avgStock=cursor.fetchone()[0]
-                        print(f"Average of {column}: {avgStock}")
-        if action.upper().startswith('E'):       
-                while True:
-                    newOptions = getColumns()
-                    print(infos[0])
-                    showOptions(newOptions)
-                    print(f"Current Selection: {infos[2]}")
-                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
-                    
-                    if edit.startswith('B'):
-                        break
-                    elif edit.startswith('R'):
-                        removal = input("Enter column indices to remove (separated by commas):\n")
-                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()])
-                        for idx in indices:
-                            infos[0].remove(newOptions[idx])
-                    elif edit.startswith('L'):
-                        newLimit = input('Enter your new limit (no formatting, just digits):\n')
-                        infos[1] = newLimit
-                    elif edit.startswith('A'):
-                        showOptions(newOptions)
-                        new_col = input("Enter the index of the column to add:\n").strip()
-                        if new_col:
-                            infos[0].append(newOptions[int(new_col)])
-                    #rebuild the selection string
-                    newSelecton = ''
-                    for i in infos[0]:
-                        newSelecton = newSelecton + str(newOptions.index(i))
-                        if(infos[0].index(i) != len(infos[0]) - 1):
-                            newSelecton = newSelecton + ','
-                    newSelecton = newSelecton + f'({infos[1]})'
-                    infos[2] = newSelecton     
-        if action.upper().startswith('S'):
-            csvName = input('Please name your .CSV file:\n')
-            print("Saving...")
-            csvMaker(csvName, createColumnTable(infos[0], activeUser, infos[1]))
-            print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")           
-
-        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV (Q)quit\n")
-    activeUser = 'exit'
-print("You have quit.")
