@@ -3,6 +3,7 @@ import sys
 import pandas as pan
 import csv
 import pyreadline3 as readline
+import os
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -55,8 +56,8 @@ def contains(container, targetElement):
             return True
     return False
 
-def csvMaker(tableName):
-    folderpath ="queryfolder/"+tableName+".csv"
+def csvMaker(fileName, tableName):
+    folderpath ="queryfolder/"+fileName+".csv"
     cursor.execute(f"SELECT * FROM '{tableName}'")
 
 
@@ -162,7 +163,7 @@ while activeUser != "exit":
     infos = selectionHandler()
     
     action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit\n")
+        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV (Q)quit\n")
 
     while action.upper() != 'Q':
         print("\n")
@@ -210,8 +211,6 @@ while activeUser != "exit":
                     edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
                     
                     if edit.startswith('B'):
-                        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)find range, (E)edit my 0selection, (Q)quit")
                         break
                     elif edit.startswith('R'):
                         removal = input("Enter column indices to remove (separated by commas):\n")
@@ -233,9 +232,14 @@ while activeUser != "exit":
                         if(infos[0].index(i) != len(infos[0]) - 1):
                             newSelecton = newSelecton + ','
                     newSelecton = newSelecton + f'({infos[1]})'
-                    infos[2] = newSelecton                
+                    infos[2] = newSelecton     
+        if action.upper().startswith('S'):
+            csvName = input('Please name your .CSV file:\n')
+            print("Saving...")
+            csvMaker(csvName, createColumnTable(infos[0], activeUser, infos[1]))
+            print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")           
 
         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit\n")
+        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .CSV (Q)quit\n")
     activeUser = 'exit'
 print("You have quit.")
