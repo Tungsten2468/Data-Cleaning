@@ -2,6 +2,7 @@ import _sqlite3 as SQ
 import sys
 import pandas as pan
 import csv
+import pyreadline3 as readline
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -12,6 +13,42 @@ print("You may query the following tables (name or #): \n")
 
 userQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 #-----FUNCTIONS-----
+def selectionHandler():
+    restultingInfo = []
+    optionList = getColumns()
+    colSelection = []
+    showOptions(optionList)
+    selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+    "[column_number,column_number,...,(limit)]\n"
+    "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    while(contains(selection, '(') == False and contains(selection, ')') == False):
+        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
+        selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+            "[column_number,column_number,...,(limit)]\n"
+            "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    charIndex = 0
+    originalSelection = selection #Keep record of the selection made for later editing purposes
+    selection = list(selection)
+    limit = '' #keep as string initially so numbers can be concactenated
+    for char in selection: #first loop extracts the limit, wherever it was specified in the string
+        if(char == '('):
+            start = selection.index('(') + 1
+            end = selection.index(')', start)
+            limit = ''.join(selection[start:end])
+            del selection[start-1:end+1]
+            break
+    for char in selection: #second loop extract column numbers
+        if(char.isdigit()):
+            colSelection.append(optionList[int(char)])
+        elif(selection == ',' or selection == ' '):
+            continue
+        elif(char.upper() == 'A'):
+            colSelection = optionList    
+    restultingInfo.append(colSelection)
+    restultingInfo.append(limit)
+    restultingInfo.append(originalSelection)
+    return restultingInfo
+
 def contains(container, targetElement):
     for i in container:
         if(i == targetElement):
@@ -121,37 +158,11 @@ while activeUser != "exit":
     checkActive()
 
     print(f"\nYou are querying {activeUser} in {fileName}")
-
-    optionList = getColumns()
-    colSelection = []
-    showOptions(optionList)
-    selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
-    "[column_number,column_number,...,(limit)]\n"
-    "Input column number as 'A' to view all columns and () as 0 for no limit\n")
-    while(contains(selection, '(') == False and contains(selection, ')') == False):
-        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
-        selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
-            "[column_number,column_number,...,(limit)]\n"
-            "Input column number as 'A' to view all columns and () as 0 for no limit\n")
-    charIndex = 0
-    selection = list(selection)
-    limit = '' #keep as string initially so numbers can be concactenated
-    for char in selection: #first loop extracts the limit, wherever it was specified in the string
-        if(char == '('):
-            start = selection.index('(') + 1
-            end = selection.index(')', start)
-            limit = ''.join(selection[start:end])
-            del selection[start-1:end+1]
-            break
-    for char in selection: #second loop extract column numbers
-        if(char.isdigit()):
-            colSelection.append(optionList[int(char)])
-        elif(selection == ',' or selection == ' '):
-            continue
-        elif(char.upper() == 'A'):
-            colSelection = optionList
-    action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection, (Q)quit\n")
+    #Remember that selection handler returns the following in the exact order: [columns selected, limit, original selection]
+    infos = selectionHandler()
+    
+    action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit\n")
 
     while action.upper() != 'Q':
         print("\n")
@@ -165,33 +176,73 @@ while activeUser != "exit":
             newQuery()
             continue
         if action.upper()[0] == 'V':
-            print(createColumnTable(colSelection, activeUser, limit))
+            print(createColumnTable(infos[0], activeUser, infos[1]))
         if action.upper()[0] == 'C':
                 calualation = input('What would you like to Calculate?:\n'\
                         "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
                 if calualation.upper()[0] == 'T':
                     print("\n**Note that categorical data types cannot be summed up.**\n")
-                    for column in colSelection:
+                    for column in infos[0]:
                         cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
                         total_stock = cursor.fetchone()[0]
                         print(f"Total of {column}: {total_stock}")
                 if calualation.upper()[0] == 'H':
-                    for column in colSelection: 
+                    for column in infos[0]: 
                         cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
                         maxstock=cursor.fetchone()[0]
                         print(f"Max of {column}: {maxstock}")
                 if calualation.upper()[0] == 'L':
-                    for column in colSelection: 
+                    for column in infos[0]: 
                         cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
                         minstock=cursor.fetchone()[0]
                         print(f"Lowest of {column}: {minstock}")
                 if calualation.upper()[0] == 'A':
-                    for column in colSelection: 
+                    for column in infos[0]: 
                         cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
                         avgStock=cursor.fetchone()[0]
                         print(f"Average of {column}: {avgStock}")
+        if action.upper().startswith('E'):       
+                while True:
+                    print(f"\nCurrent selection: {infos[2]}")
+                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
+                    
+                    if edit.startswith('B'):
+                        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        break
+                        
+                    elif edit.startswith('R'):
+                        showOptions(optionList)
+                        removal = input("Enter column indices to remove (separated by commas):\n")
+                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+                        for idx in indices:
+                            if 0 <= idx < len(infos[0]):
+                                infos[0].pop(idx)
+                        newSelecton = ''
+                        for i in infos[0]:
+                            newSelecton = newSelecton + str(optionList.index(i))
+                            if(infos[0].index(i) != len(infos[0]) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({infos[1]})'
+                        infos[2] = newSelecton
+                    elif edit.startswith('L'):
+                        newLimit = input('Enter your new limit (no formatting, just digits)\n:')
+                        infos[1] = newLimit
+        
+                    elif edit.startswith('A'):
+                        showOptions(optionList)
+                        new_col = input("Enter the name of the column to add:\n").strip()
+                        if new_col:
+                            infos[0].append(new_col)
+                        newSelecton = ''
+                        for i in infos[0]:
+                            newSelecton = newSelecton + str(optionList.index(i))
+                            if(infos[0].index(i) != len(infos[0]) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({infos[1]})'
+                        infos[2] = newSelecton                      
 
-        action = input(f"What would you like to do with {len(colSelection)} column(s)?\n" \
-        "(V)view, (C)calculations, (F)find range, (E)add/remove from my selection, (Q)quit\n")
+        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit\n")
     activeUser = 'exit'
 print("You have quit.")
