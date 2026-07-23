@@ -126,9 +126,11 @@ def actionChoice():
             continue
         if action.upper()[0] == 'V':
             print(createColumnTable(infos[0], activeUser, infos[1]))
+
+
         if action.upper()[0] == 'C':
                 calualation = input('What would you like to Calculate?:\n'\
-                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median:\n")
+                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
                 if calualation.upper()[0] == 'T':
                     print("\n**Note that categorical data types cannot be summed up.**\n")
                     for column in infos[0]:
@@ -150,6 +152,10 @@ def actionChoice():
                         cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
                         avgStock=cursor.fetchone()[0]
                         print(f"Average of {column}: {avgStock}")
+                if calualation.startswith('B'):
+                        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        break
         if action.upper().startswith('E'):       
                 while True:
                     newOptions = getColumns()
@@ -225,7 +231,7 @@ def newQuery():
             print("You have quit.")
             sys.exit()
         if con.upper()[0] == 'Y':
-            return 
+            return begin()
 
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
