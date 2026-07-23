@@ -92,8 +92,12 @@ def viewCSV(filename):
 
 def begin():
     global activeUser
-  
+    global optionList
     global limit
+    optionList = getTables()
+    showOptions(optionList)
+        
+    print("\n")
     activeUser = input("What table would you like to query? (type 'exit' to exit)\n")
     if(activeUser[0].isdigit()):
         activeUser = optionList[int(activeUser)]
@@ -161,7 +165,7 @@ def actionChoice():
                     newOptions = getColumns()
                     showOptions(newOptions)
                     print(f"Current Selection: {infos[2]}")
-                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit or (B)Back:\n").upper()
+                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit, (N)New Query or (B)Back:\n").upper()
                     
                     if edit.startswith('B'):
                         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
@@ -185,6 +189,8 @@ def actionChoice():
                     elif edit.startswith('L'):
                         newLimit = input('Enter your new limit (no formatting, just digits)\n:')
                         infos[1] = newLimit
+                    elif edit.startswith('N'):
+                        newQuery()
                     elif edit.startswith('A'):
                                           
                         for x in colSelection:
@@ -210,8 +216,6 @@ def actionChoice():
                 csvMaker(csvName,colSelection,activeUser)
                 print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
                 action = ''
-                
-        newQuery()
     print("You have quit.")
     sys.exit()
 
@@ -231,7 +235,7 @@ def newQuery():
             print("You have quit.")
             sys.exit()
         if con.upper()[0] == 'Y':
-            return begin()
+            return begin() begin()
 
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
@@ -276,10 +280,7 @@ def createColumnTable(listOfColumns, table, rowLimit):
 
 #-----PROGRAM-----
 while activeUser != "exit":
-    optionList = getTables()
-    showOptions(optionList)
     
-    print("\n")
     
     begin()
     checkActive()
