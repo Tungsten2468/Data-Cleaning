@@ -214,7 +214,6 @@ while activeUser != "exit":
                         break
                         
                     elif edit.startswith('R'):
-                        showOptions(newOptions)
                         removal = input("Enter column indices to remove (separated by commas):\n")
                         indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
                         for idx in indices:
