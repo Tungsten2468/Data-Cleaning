@@ -2,7 +2,6 @@ import _sqlite3 as SQ
 import sys
 import pandas as pan
 import csv
-import pyreadline3 as readline
 import os
 
 fileName = "final_reports"
@@ -57,9 +56,15 @@ def contains(container, targetElement):
             return True
     return False
 
-def csvMaker(fileName, tableName):
+def csvMaker(fileName, columns ,tableName):
+    if isinstance(colSelection, (tuple, list)):
+        columns_str = ", ".join(colSelection)
+    else:
+        columns_str = colSelection
+
+    clean_columns = columns_str.replace("'", "").replace('"', "")
     folderpath ="queryfolder/"+fileName+".csv"
-    cursor.execute(f"SELECT * FROM '{tableName}'")
+    cursor.execute(f"SELECT {columns_str} FROM '{tableName}'")
 
 
     with open(folderpath, "w", newline="", encoding="utf-8") as csv_file:
@@ -194,10 +199,13 @@ def actionChoice():
                         newSelecton = newSelecton + f'({infos[1]})'
                         infos[2] = newSelecton 
         if action.upper().startswith('S'):
-            csvName = input('Please name your .CSV file:\n')
-            print("Saving...")
-            csvMaker(csvName, createColumnTable(infos[0], activeUser, infos[1]))
-            print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
+                csvName = input('Please name your .CSV file:\n')
+                print("Saving...")
+                csvMaker(csvName,colSelection,activeUser)
+                print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
+                action = ''
+                
+        newQuery()
     print("You have quit.")
     sys.exit()
 
@@ -214,6 +222,7 @@ def getTables():
 def newQuery():
         con = input('\nNew Query? (Y/N):\n')
         if con.upper()[0] == 'N':
+            print("You have quit.")
             sys.exit()
         if con.upper()[0] == 'Y':
             return 
