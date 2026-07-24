@@ -508,7 +508,7 @@ def generateResultingSyntheticData(column1, column2, targetColumn, fakeTable):
     tableToGetFrom = list(curs.execute(f"SELECT {column1}, {column2} FROM "+fakeTable))
     rowID = 1
     for i in tableToGetFrom:
-        resultantData = i[0] + i[1]
+        resultantData = round((i[0] + i[1]),2)
         if(len(checkSynR) != 0):  
             curs.execute(f"UPDATE {fakeTable} SET {targetColumn} = ? WHERE rowid = ?", (resultantData, rowID))
         else:

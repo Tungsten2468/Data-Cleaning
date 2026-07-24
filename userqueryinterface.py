@@ -94,6 +94,7 @@ def begin():
     global activeUser
     global optionList
     global limit
+    global infos
     optionList = getTables()
     showOptions(optionList)
         
@@ -135,39 +136,65 @@ def actionChoice():
             print(createColumnTable(infos[0], activeUser, infos[1]))
             break
 
-        if action.upper()[0] == 'C':
-                calualation = input('What would you like to Calculate?:\n'\
-                        "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
-                if calualation.upper()[0] == 'T':
-                    print("\n**Note that categorical data types cannot be summed up.**\n")
-                    
-                    for column in infos[0]:
-                        cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
-                        total_stock = cursor.fetchone()[0]
-                        print(f"Total of {column}: {total_stock}")
-                        action =''
-                if calualation.upper()[0] == 'H':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
-                        maxstock=cursor.fetchone()[0]
-                        print(f"Max of {column}: {maxstock}")
-                        action =''
-                if calualation.upper()[0] == 'L':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
-                        minstock=cursor.fetchone()[0]
-                        print(f"Lowest of {column}: {minstock}")
-                        action =''
-                if calualation.upper()[0] == 'A':
-                    for column in infos[0]: 
-                        cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
-                        avgStock=cursor.fetchone()[0]
-                        print(f"Average of {column}: {avgStock}")
-                        action =''
-                if calualation.startswith('B'):
-                        action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
-                        break
+        if action.upper().startswith('C'):
+            calculation = input('What would you like to Calculate?:\n'
+                                "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
+            
+            calc_type = calculation.upper() if calculation else ''
+            active_columns = infos[0] if isinstance(infos, list) and isinstance(infos[0], list) else infos
+
+            numeric_columns = []
+            text_columns = []
+
+            for column in active_columns:
+                cursor.execute(f'SELECT typeof("{column}") FROM "{activeUser}" WHERE "{column}" IS NOT NULL LIMIT 1;')
+                result = cursor.fetchone()
+                col_type = result[0] if result else 'null'
+                
+                if col_type in ('integer', 'real'):
+                    numeric_columns.append(column)
+                else:
+                    text_columns.append(column)
+
+            if text_columns and calc_type in ('T', 'H', 'L', 'A', 'M'):
+                print("\n**The following text columns cannot be calculated and will be skipped:**")
+                for col in text_columns:
+                    print(f" - {col}")
+                print()
+
+            if calc_type == 'T':
+                for column in numeric_columns:
+                    cursor.execute(f'SELECT SUM("{column}") FROM "{activeUser}"')
+                    total_stock = cursor.fetchone()[0]
+                    print(f"Total of {column}: {total_stock}")
+                break
+
+            elif calc_type == 'H':
+                for column in numeric_columns: 
+                    cursor.execute(f'SELECT MAX("{column}") FROM "{activeUser}"')
+                    maxstock = cursor.fetchone()[0]
+                    print(f"Max of {column}: {maxstock}")
+                break
+
+            elif calc_type == 'L':
+                for column in numeric_columns: 
+                    cursor.execute(f'SELECT MIN("{column}") FROM "{activeUser}"')
+                    minstock = cursor.fetchone()[0]
+                    print(f"Lowest of {column}: {minstock}")
+                break
+
+            elif calc_type == 'A':
+                for column in numeric_columns: 
+                    cursor.execute(f'SELECT ROUND(AVG("{column}"), 2) FROM "{activeUser}"')
+                    avgStock = cursor.fetchone()[0]
+                    print(f"Average of {column}: {avgStock}")
+                break
+
+            elif calc_type == 'B':
+                action = input(f"What would you like to do with {len(infos)} column(s)?\n"
+                            "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit: ")
+                
+            action =''
                 
         if action.upper().startswith('E'):       
                 while True:
