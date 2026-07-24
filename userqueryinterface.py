@@ -4,6 +4,7 @@ import pandas as pan
 import csv
 import os
 from enum import Enum
+import textwrap
 
 class dataType(Enum):
     NUMERICAL = 0
@@ -42,14 +43,11 @@ def selectionHandler():
             end = selection.index(')', start)
             limit = ''.join(selection[start:end])
             del selection[start-1:end+1]
-            break
-    for char in selection: #second loop extract column numbers
-        if(char.isdigit()):
-            colSelection.append(optionList[int(char)])
-        elif(selection == ',' or selection == ' '):
-            continue
-        elif(char.upper() == 'A'):
-            colSelection = optionList    
+            break 
+    if(char.upper() == 'A'):
+        colSelection = optionList   
+    else:
+        colSelection = parseTextToList(selection, optionList)
     restultingInfo.append(colSelection)
     restultingInfo.append(limit)
     restultingInfo.append(originalSelection)
@@ -335,13 +333,52 @@ def actionChoice():
                         
 
 
+                    possibleCategories = list(possibleCategories)
+                    showOptions(possibleCategories)
+                    category = input('Select your category by number:')
+                    possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {activeUser}")]))
+                    showOptions(possibleFilters)
+                    chosenFilter = input('Choose what to filter by with number:\n')
+                    userQuery = f'SELECT * FROM {activeUser} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
+                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
+                    filtered = pan.read_sql(userQuery, dataConnect)
+                    print(filtered)
+                    break
 
-                
-
+                    
+            
     action = ''
     newQuery()
     print("You have quit.")
     sys.exit()
+
+def compoundOptions(listOfOptions, table):
+    print(listOfOptions)
+    dictList = []
+    dictID = 0
+    for col in listOfOptions:
+        query = f'SELECT {col} FROM {table}'
+        possibleVals = list(set(row[0] for row in cursor.execute(query).fetchall()))
+        optionDictionary = {i: v for i, v in enumerate(possibleVals)}
+        print(f"\nValues for {col}, (DictID: {dictID})")
+        all_vals = ", ".join(str(v) for v in optionDictionary.values())
+        dictList.append(all_vals)
+        wrapped = textwrap.fill(all_vals, width=80)
+        print(wrapped)
+        dictID += 1
+    return dictList
+        
+
+def parseTextToList(stringToParse, options):
+    result = []
+    for char in stringToParse: #second loop extract column numbers
+        if(char.isdigit()):
+            result.append(options[int(char)])
+        elif(stringToParse == ',' or stringToParse == ' '):
+            continue
+        '''elif(char.upper() == 'A'):
+            colSelection = options'''
+    return result   
 
 def checkDataType(column, table):
     typeOfData = dataType.NUMERICAL #numerical data is default
@@ -391,27 +428,47 @@ def checkExists(input, checkAgainst):
     return False
 
 def createColumnTable(listOfColumns, table, rowLimit, unique):
-    #setting unique to 'u' makes the table only contain unique values
-    rowLimit = int(rowLimit) 
+    rowLimit = int(rowLimit)
 
     pan.set_option("display.max_rows", None)
     pan.set_option("display.max_columns", None)
 
-    columnTable = pan.DataFrame(columns=listOfColumns)
+    data = {}
 
-    for i in listOfColumns:
+    for col in listOfColumns:
         if rowLimit != 0:
-            rows = cursor.execute(f"SELECT {i} FROM {table} LIMIT {rowLimit}").fetchall()
+            rows = cursor.execute(f"SELECT {col} FROM {table} LIMIT {rowLimit}").fetchall()
         else:
-            rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
+            rows = cursor.execute(f"SELECT {col} FROM {table}").fetchall()
 
         vals = [r[0] for r in rows]
 
-        if(unique == 'u'):
-            vals = list(set(vals))
+        if unique == 'u':
+            vals = list(dict.fromkeys(vals)) 
 
-        columnTable[i] = vals
+        data[col] = vals
+
+    columnTable = pan.DataFrame(dict([(col, pan.Series(vals)) for col, vals in data.items()]))
+
     return columnTable
+
+
+def assignGlobalIDs(pdDataFrame):
+    valueToID = {}
+    currentID = 1
+
+    for col in pdDataFrame.columns:
+        newVals = []
+        for val in pdDataFrame[col]:
+            if val not in valueToID:
+                valueToID[val] = currentID
+                currentID += 1
+            newVals.append(valueToID[val])
+        pdDataFrame[col] = newVals
+
+    return pdDataFrame, valueToID
+
+
 
 
 #-----PROGRAM-----
