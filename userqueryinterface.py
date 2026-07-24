@@ -48,7 +48,7 @@ def selectionHandler():
     restultingInfo.append(colSelection)
     restultingInfo.append(limit)
     restultingInfo.append(originalSelection)
-    return restultingInfo
+    return restultingInfo 
 
 def contains(container, targetElement):
     for i in container:
@@ -106,13 +106,14 @@ def begin():
     
     checkActive()
 
-
+    global infos
+    infos = selectionHandler()
     actionChoice()
 
 def actionChoice():
     print(f"\nYou are querying {activeUser} in {fileName}")
     #Remember that selection handler returns the following in the exact order: [columns selected, limit, original selection]
-    infos = selectionHandler()
+    
     optionList = getColumns()
     action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
         "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
@@ -126,40 +127,47 @@ def actionChoice():
             data = cursor.fetchall()
             for row in data:
                 print(row) 
+            
             newQuery()
-            continue
+            break
+            
         if action.upper()[0] == 'V':
             print(createColumnTable(infos[0], activeUser, infos[1]))
-
 
         if action.upper()[0] == 'C':
                 calualation = input('What would you like to Calculate?:\n'\
                         "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
                 if calualation.upper()[0] == 'T':
                     print("\n**Note that categorical data types cannot be summed up.**\n")
+                    
                     for column in infos[0]:
                         cursor.execute(f"SELECT SUM({column}) FROM '{activeUser}'")
                         total_stock = cursor.fetchone()[0]
                         print(f"Total of {column}: {total_stock}")
+                        action =''
                 if calualation.upper()[0] == 'H':
                     for column in infos[0]: 
                         cursor.execute(f"SELECT MAX({column})FROM'{activeUser}'")
                         maxstock=cursor.fetchone()[0]
                         print(f"Max of {column}: {maxstock}")
+                        action =''
                 if calualation.upper()[0] == 'L':
                     for column in infos[0]: 
                         cursor.execute(f"SELECT MIN({column})FROM'{activeUser}'")
                         minstock=cursor.fetchone()[0]
                         print(f"Lowest of {column}: {minstock}")
+                        action =''
                 if calualation.upper()[0] == 'A':
                     for column in infos[0]: 
                         cursor.execute(f"SELECT ROUND(AVG({column}),2) FROM'{activeUser}'")
                         avgStock=cursor.fetchone()[0]
                         print(f"Average of {column}: {avgStock}")
+                        action =''
                 if calualation.startswith('B'):
                         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
                         "(V)view, (C)calculations, (F)filter, (E)edit my selection, (Q)quit")
                         break
+                
         if action.upper().startswith('E'):       
                 while True:
                     newOptions = getColumns()
@@ -189,7 +197,9 @@ def actionChoice():
                     elif edit.startswith('L'):
                         newLimit = input('Enter your new limit (no formatting, just digits)\n:')
                         infos[1] = newLimit
+                        edit =''
                     elif edit.startswith('N'):
+                        edit =''
                         newQuery()
                     elif edit.startswith('A'):
                                           
@@ -216,6 +226,8 @@ def actionChoice():
                 csvMaker(csvName,colSelection,activeUser)
                 print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
                 action = ''
+    action = ''
+    newQuery()
     print("You have quit.")
     sys.exit()
 
@@ -230,12 +242,11 @@ def getTables():
     return tableList
 
 def newQuery():
-        con = input('\nNew Query? (Y/N):\n')
+        con = input('\nAre you sure you want to make a new query?(Y/N):\n')
         if con.upper()[0] == 'N':
-            print("You have quit.")
-            sys.exit()
+            return
         if con.upper()[0] == 'Y':
-            return begin()
+            begin()
 
 def getColumns():
     tableColumns=f"PRAGMA table_info({activeUser});"
@@ -283,4 +294,5 @@ while activeUser != "exit":
     
     
     begin()
+
     checkActive()
