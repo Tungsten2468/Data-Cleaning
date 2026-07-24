@@ -93,6 +93,30 @@ def viewCSV(filename):
     for g in data:
         print(g)
 
+def dataSep():
+            global numeric_columns
+            global text_columns
+            active_columns = infos[0] if isinstance(infos, list) and isinstance(infos[0], list) else infos
+
+            numeric_columns = []
+            text_columns = []
+
+            for column in active_columns:
+                cursor.execute(f'SELECT typeof("{column}") FROM "{activeUser}" WHERE "{column}" IS NOT NULL LIMIT 1;')
+                result = cursor.fetchone()
+                col_type = result[0] if result else 'null'
+                
+                if col_type in ('integer', 'real'):
+                    numeric_columns.append(column)
+                else:
+                    text_columns.append(column)
+            return numeric_columns, text_columns
+
+
+            
+
+
+
 def begin():
     global activeUser
     global optionList
@@ -145,18 +169,7 @@ def actionChoice():
             calc_type = calculation.upper() if calculation else ''
             active_columns = infos[0] if isinstance(infos, list) and isinstance(infos[0], list) else infos
 
-            numeric_columns = []
-            text_columns = []
-
-            for column in active_columns:
-                cursor.execute(f'SELECT typeof("{column}") FROM "{activeUser}" WHERE "{column}" IS NOT NULL LIMIT 1;')
-                result = cursor.fetchone()
-                col_type = result[0] if result else 'null'
-                
-                if col_type in ('integer', 'real'):
-                    numeric_columns.append(column)
-                else:
-                    text_columns.append(column)
+            dataSep()
 
             if text_columns and calc_type in ('T', 'H', 'L', 'A', 'M'):
                 print("\n**The following text columns cannot be calculated and will be skipped:**")
@@ -250,12 +263,15 @@ def actionChoice():
                                 newSelecton = newSelecton + ','
                         newSelecton = newSelecton + f'({infos[1]})'
                         infos[2] = newSelecton 
+       
         if action.upper().startswith('S'):
+
                 csvName = input('Please name your .CSV file:\n')
                 print("Saving...")
                 csvMaker(csvName,colSelection,activeUser)
                 print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
-                action = ''
+                break
+        
         if action.upper().startswith('F'):
             filterBy = input('What would you like to filter by?' \
             '(C)category, (R)range, (N)number, (B)back')
@@ -272,8 +288,8 @@ def actionChoice():
                     possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {activeUser}")]))
                     showOptions(possibleFilters)
                     chosenFilter = input('Choose what to filter by with number:\n')
-                    userQuery = f'SELECT * FROM {activeUser} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(category)]}"'
-                    print(f'Filtered your selection by {possibleCategories[int(category)]}.\n')
+                    userQuery = f'SELECT * FROM {activeUser} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
+                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
                     filtered = pan.read_sql(userQuery, dataConnect)
                     print(filtered)
                     break
