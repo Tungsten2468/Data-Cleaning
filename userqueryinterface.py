@@ -276,7 +276,7 @@ def actionChoice():
         
         if action.upper().startswith('F'):
             filterBy = input('What would you like to filter by?' \
-            '(C)category, (R)range, (N)number, (B)back')
+            '(C)category, (R)range, (B)back')
             while filterBy.upper()[0] != 'B':
                 if(filterBy.upper().startswith('C')):
                     print(f"Here are the categories you can sort by (based on your selected columns):\n")
@@ -305,7 +305,7 @@ def actionChoice():
                         print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
 
                         try:
-                            Startr = float(input('What range do you want to filter by?\nStart: '))
+                            Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
                             endr = float(input('End: '))
                             
                             rangQue = f'SELECT * FROM "{activeUser}" WHERE "{affectedCol}" BETWEEN ? AND ?'
