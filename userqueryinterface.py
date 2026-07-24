@@ -3,6 +3,11 @@ import sys
 import pandas as pan
 import csv
 import os
+from enum import Enum
+
+class dataType(Enum):
+    NUMERICAL = 0
+    CATEGORICAL = 1
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
@@ -116,7 +121,7 @@ def actionChoice():
     
     optionList = getColumns()
     action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+        "(V)view, (S)select, (C)calculations, (F)filter, (E)edit my selection, (SS)save to .CSV, (Q)quit\n")
 
     while action.upper() != 'Q':
         print("\n")
@@ -132,7 +137,7 @@ def actionChoice():
             break
             
         if action.upper()[0] == 'V':
-            print(createColumnTable(infos[0], activeUser, infos[1]))
+            print(createColumnTable(infos[0], activeUser, infos[1], 'n'))
 
         if action.upper()[0] == 'C':
                 calualation = input('What would you like to Calculate?:\n'\
@@ -165,7 +170,7 @@ def actionChoice():
                         action =''
                 if calualation.startswith('B'):
                         action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (Q)quit")
+                        "(V)view, (S)select, (C)calculations, (A)analyze, (E)edit my selection, (SS)save to .CSV, (Q)quit\n")
                         break
                 
         if action.upper().startswith('E'):       
@@ -226,10 +231,32 @@ def actionChoice():
                 csvMaker(csvName,colSelection,activeUser)
                 print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
                 action = ''
+        if action.upper().startswith('F'):
+            filterBy = input('What would you like to filter by?' \
+            '(C)category, (R)range, (N)number, (B)back')
+            while filterBy.upper()[0] != 'B':
+                if(filterBy.upper().startswith('C')):
+                    print(f"Here are the categories you can sort by (based on your selected columns):\n")
+                    possibleCategories = []
+                    for i in colSelection:
+                        if(checkDataType(i, activeUser) == dataType.CATEGORICAL):
+                            possibleCategories.append(i)
+                    print(createColumnTable(possibleCategories, activeUser, 0, 'u'))
+                    category = input('Select your category by number:\n')
+                    
+            
     action = ''
     newQuery()
     print("You have quit.")
     sys.exit()
+
+def checkDataType(column, table):
+    typeOfData = dataType.NUMERICAL #numerical data is default
+    rawData = cursor.execute(f'SELECT {column} FROM {table}').fetchall()
+    dataToCheck = [d[0] for d in rawData]
+    if type(dataToCheck[0]) == str:
+        typeOfData = dataType.CATEGORICAL
+    return typeOfData
 
 def checkActive():
     if activeUser =='exit':
@@ -270,7 +297,8 @@ def checkExists(input, checkAgainst):
             return True
     return False
 
-def createColumnTable(listOfColumns, table, rowLimit):
+def createColumnTable(listOfColumns, table, rowLimit, unique):
+    #setting unique to 'u' makes the table only contain unique values
     rowLimit = int(rowLimit) 
 
     pan.set_option("display.max_rows", None)
@@ -284,8 +312,12 @@ def createColumnTable(listOfColumns, table, rowLimit):
         else:
             rows = cursor.execute(f"SELECT {i} FROM {table}").fetchall()
 
-        columnTable[i] = [r[0] for r in rows]
+        vals = [r[0] for r in rows]
 
+        if(unique == 'u'):
+            vals = list(set(vals))
+
+        columnTable[i] = vals
     return columnTable
 
 
@@ -296,3 +328,4 @@ while activeUser != "exit":
     begin()
 
     checkActive()
+    
