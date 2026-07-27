@@ -4,7 +4,6 @@ import pandas as pan
 import csv
 import os
 from enum import Enum
-import textwrap
 
 class userQuery():
     def __init__(self, tableName, columnNames, limit, stringSelection, SQLconnection):
@@ -61,7 +60,6 @@ print("You may query the following tables (name or #): \n")
 uQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 #-----FUNCTIONS-----
 def selectionHandler(queryTable):
-    
     restultingInfo = []
     optionList = getColumns(queryTable)
     colSelection = []
@@ -131,7 +129,6 @@ def csvMaker(fileName, query):
 
         writer.writerows(cursor.fetchall())
 
-
 def viewCSV(filename):
     data = []
     dataFile = open(f"queryfolder/"+filename+'.csv', newline="")
@@ -143,25 +140,6 @@ def viewCSV(filename):
     dataFile.close()
     for g in data:
         print(g)
-
-'''def dataSep():
-            global numeric_columns
-            global text_columns
-            active_columns = infos[0] if isinstance(infos, list) and isinstance(infos[0], list) else infos
-
-            numeric_columns = []
-            text_columns = []
-
-            for column in active_columns:
-                cursor.execute(f'SELECT typeof("{column}") FROM "{queryTable}" WHERE "{column}" IS NOT NULL LIMIT 1;')
-                result = cursor.fetchone()
-                col_type = result[0] if result else 'null'
-                
-                if col_type in ('integer', 'real'):
-                    numeric_columns.append(column)
-                else:
-                    text_columns.append(column)
-            return numeric_columns, text_columns'''
 
 def begin():
     optionList = getTables()
@@ -434,11 +412,9 @@ def checkExists(input, checkAgainst):
             return True
     return False
 
-
 queryTable = ''
 
 #-----PROGRAM-----
 while queryTable != "exit":
     begin()
-
     checkActive()
