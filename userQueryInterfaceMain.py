@@ -1,3 +1,464 @@
 import _sqlite3 as SQ
+import sys
 import pandas as pan
+import csv
+import os
+from enum import Enum
+import textwrap
 
+class userQuery():
+    def __init__(self, tableName, columnNames, limit, stringSelection, SQLconnection):
+        self.tableName = tableName
+        self.columnNames = columnNames
+        self.limit = limit
+        self.SQLconnection = SQLconnection
+        self.stringSelection = stringSelection #the format in which the user enters the initial query (0,2,4(90))
+        
+        if(self.limit != 0):
+            self.stringQuery = f"SELECT * FROM {self.tableName} LIMIT {limit}"
+        else:
+            self.stringQuery = f"SELECT * FROM {self.tableName}"
+        self.dataFrame = pan.read_sql_query(self.stringQuery, self.SQLconnection)
+    def runQuery(self, cursor):
+        result = cursor.execute(self.stringQuery, self.SQLconnection).fetchall()
+
+    def calculate(self, column, calc):
+        df = self.dataFrame
+        if(calc == 'A'): #Average
+            df[column].mean()
+        if(calc == 'M'): #Median
+            df[column].median()
+        if(calc == 'T'): #Total
+            df[column].sum()
+        if(calc == 'H'): #Highest(max)
+            df[column].max()
+        if(calc == 'L'): #Lowest(min)
+            df[column].min()
+
+    def filterCategorical(self, column, targetValue):
+        df = self.dataFrame
+        #change the actual dataframe itself
+        self.dataFrame = df[df[column] == targetValue]
+
+class dataType(Enum):
+    NUMERICAL = 0
+    CATEGORICAL = 1
+
+#-----SETUP-----
+pan.set_option("display.max_rows", None)
+pan.set_option("display.max_columns", None)
+fileName = "final_reports"
+dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
+cursor = dataConnect.cursor()
+
+print(f"\nYou are querying {fileName}.\n")
+print("You may query the following tables (name or #): \n")
+
+uQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
+#-----FUNCTIONS-----
+def selectionHandler():
+    global colSelection
+    restultingInfo = []
+    optionList = getColumns(queryTable)
+    colSelection = []
+    showOptions(optionList)
+    selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+    "[column_number,column_number,...,(limit)]\n"
+    "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    while(contains(selection, '(') == False and contains(selection, ')') == False):
+        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
+        selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+            "[column_number,column_number,...,(limit)]\n"
+            "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    charIndex = 0
+    originalSelection = selection #Keep record of the selection made for later editing purposes
+    selection = list(selection)
+    limit = '' #keep as string initially so numbers can be concactenated
+    for char in selection: #first loop extracts the limit, wherever it was specified in the string
+        if(char == '('):
+            start = selection.index('(') + 1
+            end = selection.index(')', start)
+            limit = ''.join(selection[start:end])
+            del selection[start-1:end+1]
+            break 
+    if(char.upper() == 'A'):
+        colSelection = optionList   
+    else:
+        colSelection = parseTextToList(selection, optionList)
+    restultingInfo.append(colSelection)
+    restultingInfo.append(limit)
+    restultingInfo.append(originalSelection)
+    return restultingInfo 
+
+def contains(container, targetElement):
+    for i in container:
+        if(i == targetElement):
+            return True
+    return False
+
+def csvMaker(fileName, columns ,tableName):
+    if isinstance(colSelection, (tuple, list)):
+        columns_str = ", ".join(colSelection)
+    else:
+        columns_str = colSelection
+
+    clean_columns = columns_str.replace("'", "").replace('"', "")
+    folderpath ="queryfolder/"+fileName+".csv"
+    cursor.execute(f"SELECT {columns_str} FROM '{tableName}'")
+
+
+    with open(folderpath, "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.writer(csv_file)
+    
+
+        headers = [description[0] for description in cursor.description]
+        writer.writerow(headers)
+    
+
+        writer.writerows(cursor.fetchall())
+
+
+def viewCSV(filename):
+    data = []
+    dataFile = open(f"queryfolder/"+filename+'.csv', newline="")
+    fileRead = csv.DictReader(dataFile)
+
+    for entry in fileRead:
+        data.append(entry)
+
+    dataFile.close()
+    for g in data:
+        print(g)
+
+'''def dataSep():
+            global numeric_columns
+            global text_columns
+            active_columns = infos[0] if isinstance(infos, list) and isinstance(infos[0], list) else infos
+
+            numeric_columns = []
+            text_columns = []
+
+            for column in active_columns:
+                cursor.execute(f'SELECT typeof("{column}") FROM "{queryTable}" WHERE "{column}" IS NOT NULL LIMIT 1;')
+                result = cursor.fetchone()
+                col_type = result[0] if result else 'null'
+                
+                if col_type in ('integer', 'real'):
+                    numeric_columns.append(column)
+                else:
+                    text_columns.append(column)
+            return numeric_columns, text_columns'''
+
+def begin():
+    optionList = getTables()
+    showOptions(optionList)
+        
+    print("\n")
+    global queryTable
+    queryTable = input("What table would you like to query? (type 'exit' to exit)\n")
+    if(queryTable[0].isdigit()):
+        queryTable = optionList[int(queryTable)]
+    checkActive()
+    infos = selectionHandler()
+    myQuery = userQuery(queryTable, infos[0], int(infos[1]), infos[2], dataConnect)
+
+    actionChoice(myQuery)
+
+def actionChoice(query):
+    print(f"\nYou are querying {query.tableName} in {fileName}")
+    #Remember that selection handler returns the following in the exact order: [columns selected, limit, original selection]
+    
+    optionList = getColumns(query.tableName)
+    action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
+        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+    while action.upper() != 'Q':
+        colSelection = query.columnNames
+        print("\n")
+        
+        '''if action.upper()[0] == 'A':
+            
+            cursor.execute(query.stringQuery)
+            data = cursor.fetchall()
+            for row in data:
+                print(row) 
+            
+            newQuery()
+            break'''
+            
+        if action.upper()[0] == 'V':
+            print(query.dataFrame)
+            action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
+        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+
+        if action.upper().startswith('C'):
+            calculation = input('What would you like to Calculate?:\n'
+                                "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
+            
+            if calculation.upper().startswith() == 'T':
+                print(query.calculate('T'))
+            elif calculation.upper().startswith() == 'H':
+                print(query.calculate('H'))
+            elif calculation.upper().startswith() == 'L':
+                print(query.calculate('L'))
+            elif calculation.upper().startswith() == 'A':
+                print(query.calculate('H'))
+            elif calculation.upper().startswith() == 'M':
+                print(query.calculate('H'))
+            elif calculation.upper().startswith() == 'B':
+                action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n"
+                            "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .csv, (Q)quit: ")
+                
+            action =''
+                
+        if action.upper().startswith('E'):       
+                while True:
+                    newOptions = getColumns(query.tableName)
+                    showOptions(newOptions)
+                    print(f"Current Selection: {query.stringSelection}")
+                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit, (N)New Query or (B)Back:\n").upper()
+                    
+                    if edit.startswith('B'):
+                        action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
+                        "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
+                        break
+                        
+                    elif edit.startswith('R'):
+                        print(colSelection)
+                        removal = input("Enter column indices to remove (separated by commas):\n")
+                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+                        for idx in indices:
+                            if 0 <= idx < len(query.columnNames):
+                                query.columnNames.pop(idx)
+                        newSelecton = ''
+                        for i in query.columnNames:
+                            newSelecton = newSelecton + str(newOptions.index(i))
+                            if(query.columnNames.index(i) != len(query.columnNames) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({query.columnNames})'
+                        query.stringSelection = newSelecton
+                    elif edit.startswith('L'):
+                        newLimit = input('Enter your new limit (no formatting, just digits)\n:')
+                        query.limit = newLimit
+                        edit =''
+                    elif edit.startswith('N'):
+                        edit =''
+                        newQuery()
+                    elif edit.startswith('A'):
+                                          
+                        for x in colSelection:
+                            for y in optionList:
+                                if x == y:
+                                    optionList.remove(x)
+
+                        showOptions(optionList)
+                        print(f'Current Selection:{colSelection}')
+                        new_col = input("Enter the name of the column to add:\n").strip()
+                        if new_col:
+                            query.columnNames.append(new_col)
+                        newSelecton = ''
+                        for i in query.columnNames:
+                            newSelecton = newSelecton + str(newOptions.index(i))
+                            if(query.columnNames.index(i) != len(query.columnNames) - 1):
+                                newSelecton = newSelecton + ','
+                        newSelecton = newSelecton + f'({query.limit})'
+                        query.stringSelection = newSelecton 
+       
+        if action.upper().startswith('S'):
+
+                csvName = input('Please name your .CSV file:\n')
+                print("Saving...")
+                csvMaker(csvName,colSelection,queryTable)
+                print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
+                break
+        
+        if action.upper().startswith('F'):
+            filterBy = input('What would you like to filter by?' \
+            '(C)category, (R)range, (B)back')
+            while filterBy.upper()[0] != 'B':
+                if(filterBy.upper().startswith('C')):
+                    print(f"Here are the categories you can sort by (based on your selected columns):\n")
+                    possibleCategories = []
+                    for i in colSelection:
+                        if(checkDataType(i, queryTable) == dataType.CATEGORICAL):
+                            possibleCategories.append(i)
+                    showOptions(possibleCategories)
+                    category = input('Select your category by number:\n')
+                    possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {queryTable}")]))
+                    showOptions(possibleFilters)
+                    chosenFilter = input('Choose what to filter by with number:\n')
+                    query.stringQuery = f'SELECT * FROM {queryTable} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
+                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
+                    filtered = pan.read_sql(userQuery, dataConnect)
+                    print(filtered)
+                    break
+                
+                
+                '''while filterBy.upper().startswith('R'):
+                    #dataSep()
+                    if text_columns:
+                        print("\n**The following text columns cannot be calculated and will be skipped:**")
+                        for col in text_columns:
+                            print(f" - {col}")
+                        print()
+
+                    showOptions(numeric_columns)
+                    affectedCol = int(input("What column do you want the range to affect?: \n"))
+                    affectedCol = numeric_columns[affectedCol]
+                    if affectedCol in numeric_columns:
+                        cursor.execute(f'SELECT MIN("{affectedCol}"), MAX("{affectedCol}") FROM "{queryTable}"')
+                        db_min, db_max = cursor.fetchone()
+                        print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
+
+                        try:
+                            Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
+                            endr = float(input('End: '))
+                            
+                            rangQue = f'SELECT * FROM "{queryTable}" WHERE "{affectedCol}" BETWEEN ? AND ?'
+                            cursor.execute(rangQue, (Startr, endr))
+                            
+                            results = cursor.fetchall()
+                            print(f"\nFound {len(results)} matching row(s):")
+                            for row in results:
+                                print(row)
+                            choi = input('Continue filtering?(Y/N):\n')
+                            if choi.upper().startswith('Y'):
+                             filterBy == 'R'
+                            elif choi.upper().startswith('N'):
+                                filterBy == ''
+
+                                actionChoice()
+                        except ValueError:
+                            print("\nError: Please enter numbers only for the range bounds.")
+                    else:
+                        print(f"\nError: '{affectedCol}' is not a valid numeric column.")
+                        filterBy = input('Continue filtering?(Y/N):\n')
+                    
+                        if filterBy.upper().startswith('Y'):
+                            filterBy == 'R'
+                        elif filterBy.upper().startswith('N'):
+                            actionChoice()'''
+
+    #newQuery()
+    #print("You have quit.")
+    sys.exit()
+
+def compoundOptions(listOfOptions, table):
+    print(listOfOptions)
+    dictList = []
+    dictID = 0
+    for col in listOfOptions:
+        query = f'SELECT {col} FROM {table}'
+        possibleVals = list(set(row[0] for row in cursor.execute(query).fetchall()))
+        optionDictionary = {i: v for i, v in enumerate(possibleVals)}
+        print(f"\nValues for {col}, (DictID: {dictID})")
+        all_vals = ", ".join(str(v) for v in optionDictionary.values())
+        dictList.append(all_vals)
+        wrapped = textwrap.fill(all_vals, width=80)
+        print(wrapped)
+        dictID += 1
+    return dictList
+        
+
+def parseTextToList(stringToParse, options):
+    result = []
+    for char in stringToParse: #second loop extract column numbers
+        if(char.isdigit()):
+            result.append(options[int(char)])
+        elif(stringToParse == ',' or stringToParse == ' '):
+            continue
+        '''elif(char.upper() == 'A'):
+            colSelection = options'''
+    return result   
+
+def checkDataType(column, table):
+    typeOfData = dataType.NUMERICAL #numerical data is default
+    rawData = cursor.execute(f'SELECT {column} FROM {table}').fetchall()
+    dataToCheck = [d[0] for d in rawData]
+    if type(dataToCheck[0]) == str:
+        typeOfData = dataType.CATEGORICAL
+    return typeOfData
+
+def checkActive():
+    if queryTable =='exit':
+        sys.exit()
+
+def getTables():
+    tableList = []
+    for i in cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").fetchall():
+        tableList.append(i[0])
+    return tableList
+
+def newQuery():
+        con = input('\nAre you sure you want to make a new query?(Y/N):\n')
+        if con.upper()[0] == 'N':
+            return
+        if con.upper()[0] == 'Y':
+            begin()
+
+def getColumns(tableName):
+    tableColumns=f"PRAGMA table_info('{tableName}');"
+    cursor.execute(tableColumns)
+
+    raw_results = cursor.fetchall()
+    column_names = [col[1] for col in raw_results]
+    return column_names
+
+def showOptions(options):
+        for i in options:
+            print (options.index(i), i)
+
+queryTable = ''
+
+def checkExists(input, checkAgainst):
+    if(input == 'exit'):
+        return True
+    for i in checkAgainst:
+        if(i == input):
+            return True
+    return False
+
+def createColumnTable(listOfColumns, table, rowLimit, unique):
+    rowLimit = int(rowLimit)
+
+    pan.set_option("display.max_rows", None)
+    pan.set_option("display.max_columns", None)
+
+    data = {}
+
+    for col in listOfColumns:
+        if rowLimit != 0:
+            rows = cursor.execute(f"SELECT {col} FROM {table} LIMIT {rowLimit}").fetchall()
+        else:
+            rows = cursor.execute(f"SELECT {col} FROM {table}").fetchall()
+
+        vals = [r[0] for r in rows]
+
+        if unique == 'u':
+            vals = list(dict.fromkeys(vals)) 
+
+        data[col] = vals
+
+    columnTable = pan.DataFrame(dict([(col, pan.Series(vals)) for col, vals in data.items()]))
+
+    return columnTable
+
+def assignGlobalIDs(pdDataFrame):
+    valueToID = {}
+    currentID = 1
+
+    for col in pdDataFrame.columns:
+        newVals = []
+        for val in pdDataFrame[col]:
+            if val not in valueToID:
+                valueToID[val] = currentID
+                currentID += 1
+            newVals.append(valueToID[val])
+        pdDataFrame[col] = newVals
+
+    return pdDataFrame, valueToID
+
+#-----PROGRAM-----
+while queryTable != "exit":
+    begin()
+
+    checkActive()

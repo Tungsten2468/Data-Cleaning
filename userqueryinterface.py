@@ -7,12 +7,13 @@ from enum import Enum
 import textwrap
 
 class userQuery():
-    def __init__(self, tableName, columnNames, limit, stringQuery, SQLconnection):
+    def __init__(self, tableName, columnNames, limit, stringQuery, stringSelection, SQLconnection):
         self.tableName = tableName
         self.columnNames = columnNames
         self.limit = limit
-        self.stringQuery = stringQuery 
+        self.stringQuery = stringQuery #the actual SQL query format
         self.SQLconnection = SQLconnection
+        self.stringSelection = stringSelection #the format in which the user enters the initial query (0,2,4(90))
         self.dataFrame = pan.read_sql_query(self.stringQuery)
 
     def runQuery(self, cursor):
@@ -39,6 +40,8 @@ class userQuery():
 class dataType(Enum):
     NUMERICAL = 0
     CATEGORICAL = 1
+
+#-----SETUP-----
 
 fileName = "final_reports"
 dataConnect = SQ.connect(f"syn_output_data/{fileName}.db")
