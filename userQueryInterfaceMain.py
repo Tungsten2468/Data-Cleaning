@@ -39,24 +39,10 @@ class userQuery():
         df = self.dataFrame
         return (df[column] == targetVal).sum()
 
-
     def filterCategorical(self, column, targetValue):
         df = self.dataFrame
         #change the actual dataframe itself
         self.dataFrame = df[df[column] == targetValue]
-
-    '''def rebuildQuery(self, whereClause=None):
-        parentQ = f"SELECT * FROM {self.tableName}"
-        
-        if whereClause:
-            parentQ += f" WHERE {whereClause}"
-        
-        if self.limit != 0:
-            parentQ += f" LIMIT {self.limit}"
-        
-        self.stringQuery = parentQ
-        self.dataFrame = pan.read_sql_query(self.stringQuery, self.SQLconnection)'''
-
 
 class dataType(Enum):
     NUMERICAL = 0
@@ -74,8 +60,8 @@ print("You may query the following tables (name or #): \n")
 
 uQuery = 'SELECT name FROM sqlite_master WHERE type="table"'
 #-----FUNCTIONS-----
-def selectionHandler():
-    global colSelection
+def selectionHandler(queryTable):
+    
     restultingInfo = []
     optionList = getColumns(queryTable)
     colSelection = []
@@ -83,7 +69,7 @@ def selectionHandler():
     selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
     "[column_number,column_number,...,(limit)]\n"
     "Input column number as 'A' to view all columns and () as 0 for no limit\n")
-    while(contains(selection, '(') == False and contains(selection, ')') == False):
+    while not contains(selection, '(') or not contains(selection, ')'):
         print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
         selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
             "[column_number,column_number,...,(limit)]\n"
@@ -97,12 +83,20 @@ def selectionHandler():
             start = selection.index('(') + 1
             end = selection.index(')', start)
             limit = ''.join(selection[start:end])
-            del selection[start-1:end+1]
+            selection = selection[:start-1] + selection[end+1:]
             break 
-    if(char.upper() == 'A'):
-        colSelection = optionList   
+    if 'A' in originalSelection.upper():
+        colSelection = optionList
     else:
-        colSelection = parseTextToList(selection, optionList)
+        try:
+            colSelection = parseTextToList(selection, optionList)
+        except:
+            print("Your selection was structured incorrectly. Try again.")
+            return selectionHandler(queryTable)
+    for i in colSelection:
+        if i not in range(len(optionList) - 1):
+            print("Your selection does not exist. Please enter only available numbers.")
+            return selectionHandler(queryTable)
     restultingInfo.append(colSelection)
     restultingInfo.append(limit)
     restultingInfo.append(originalSelection)
@@ -114,15 +108,15 @@ def contains(container, targetElement):
             return True
     return False
 
-def csvMaker(fileName, columns ,tableName):
-    if isinstance(colSelection, (tuple, list)):
-        columns_str = ", ".join(colSelection)
+def csvMaker(fileName, query):
+    if isinstance(query.columnNames, (tuple, list)):
+        columns_str = ", ".join(query.columnNames)
     else:
-        columns_str = colSelection
+        columns_str = query.columnNames
 
     clean_columns = columns_str.replace("'", "").replace('"', "")
     folderpath ="queryfolder/"+fileName+".csv"
-    cursor.execute(f"SELECT {columns_str} FROM '{tableName}'")
+    cursor.execute(f"SELECT {columns_str} FROM '{query.tableName}'")
 
 
     with open(folderpath, "w", newline="", encoding="utf-8") as csv_file:
@@ -170,14 +164,19 @@ def viewCSV(filename):
 def begin():
     optionList = getTables()
     showOptions(optionList)
-        
+
     print("\n")
-    global queryTable
     queryTable = input("What table would you like to query? (type 'exit' to exit)\n")
-    if(queryTable[0].isdigit()):
-        queryTable = optionList[int(queryTable)]
+
+    while queryTable != "exit" and (not queryTable.isdigit() or int(queryTable) not in range(len(optionList))):
+        print("That table doesn't exist! Try again, available numbers only please.")
+        queryTable = input("What table would you like to query? (type 'exit' to exit)\n")
+    if queryTable == "exit":
+        sys.exit()
+    queryTable = optionList[int(queryTable)]
+
     checkActive()
-    infos = selectionHandler()
+    infos = selectionHandler(queryTable)
     myQuery = userQuery(queryTable, infos[0], int(infos[1]), infos[2], dataConnect)
 
     actionChoice(myQuery)
@@ -254,7 +253,7 @@ def actionChoice(query):
                         break
                         
                     elif edit.startswith('R'):
-                        print(colSelection)
+                        print(query.columnNames)
                         removal = input("Enter column indices to remove (separated by commas):\n")
                         indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
                         for idx in indices:
@@ -276,13 +275,13 @@ def actionChoice(query):
                         newQuery()
                     elif edit.startswith('A'):
                                           
-                        for x in colSelection:
+                        for x in query.columnNames:
                             for y in optionList:
                                 if x == y:
                                     optionList.remove(x)
 
                         showOptions(optionList)
-                        print(f'Current Selection:{colSelection}')
+                        print(f'Current Selection:{query.columnNames}')
                         new_col = input("Enter the name of the column to add:\n").strip()
                         if new_col:
                             query.columnNames.append(new_col)
@@ -298,7 +297,7 @@ def actionChoice(query):
 
                 csvName = input('Please name your .CSV file:\n')
                 print("Saving...")
-                csvMaker(csvName,colSelection,queryTable)
+                csvMaker(csvName,query.columnNames, query.tableName)
                 print(f"{csvName}.csv has been save at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
                 break
         
@@ -309,7 +308,7 @@ def actionChoice(query):
                 if(filterBy.upper().startswith('C')):
                     print(f"Here are the categories you can sort by (based on your selected columns):\n")
                     possibleCategories = []
-                    for i in colSelection:
+                    for i in query.columnNames:
                         if(checkDataType(i, query.tableName) == dataType.CATEGORICAL):
                             possibleCategories.append(i)
                     showOptions(possibleCategories)
@@ -422,6 +421,14 @@ def getColumns(tableName):
 def showOptions(options):
     for idx, val in enumerate(options):
         print(idx, val)
+
+def checkExists(input, checkAgainst):
+    if(input == 'exit'):
+        return True
+    for i in checkAgainst:
+        if(i == input):
+            return True
+    return False
 
 
 queryTable = ''
