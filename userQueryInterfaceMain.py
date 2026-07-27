@@ -40,6 +40,19 @@ class userQuery():
         #change the actual dataframe itself
         self.dataFrame = df[df[column] == targetValue]
 
+    '''def rebuildQuery(self, whereClause=None):
+        parentQ = f"SELECT * FROM {self.tableName}"
+        
+        if whereClause:
+            parentQ += f" WHERE {whereClause}"
+        
+        if self.limit != 0:
+            parentQ += f" LIMIT {self.limit}"
+        
+        self.stringQuery = parentQ
+        self.dataFrame = pan.read_sql_query(self.stringQuery, self.SQLconnection)'''
+
+
 class dataType(Enum):
     NUMERICAL = 0
     CATEGORICAL = 1
@@ -279,19 +292,19 @@ def actionChoice(query):
                     print(f"Here are the categories you can sort by (based on your selected columns):\n")
                     possibleCategories = []
                     for i in colSelection:
-                        if(checkDataType(i, queryTable) == dataType.CATEGORICAL):
+                        if(checkDataType(i, query.tableName) == dataType.CATEGORICAL):
                             possibleCategories.append(i)
                     showOptions(possibleCategories)
                     category = input('Select your category by number:\n')
                     possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {queryTable}")]))
                     showOptions(possibleFilters)
                     chosenFilter = input('Choose what to filter by with number:\n')
-                    query.stringQuery = f'SELECT * FROM {queryTable} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
+                    query.filterCategorical(possibleCategories[int(category)], possibleFilters[int(chosenFilter)])
+                    query.stringQuery = f'SELECT * FROM {query.tableName} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
                     print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
-                    filtered = pan.read_sql(userQuery, dataConnect)
-                    print(filtered)
-                    break
-                
+                    filtered = pan.read_sql(query.stringQuery, dataConnect)
+                    print(query.dataFrame)
+                    break 
                 
                 '''while filterBy.upper().startswith('R'):
                     #dataSep()
@@ -341,24 +354,7 @@ def actionChoice(query):
     #newQuery()
     #print("You have quit.")
     sys.exit()
-
-def compoundOptions(listOfOptions, table):
-    print(listOfOptions)
-    dictList = []
-    dictID = 0
-    for col in listOfOptions:
-        query = f'SELECT {col} FROM {table}'
-        possibleVals = list(set(row[0] for row in cursor.execute(query).fetchall()))
-        optionDictionary = {i: v for i, v in enumerate(possibleVals)}
-        print(f"\nValues for {col}, (DictID: {dictID})")
-        all_vals = ", ".join(str(v) for v in optionDictionary.values())
-        dictList.append(all_vals)
-        wrapped = textwrap.fill(all_vals, width=80)
-        print(wrapped)
-        dictID += 1
-    return dictList
         
-
 def parseTextToList(stringToParse, options):
     result = []
     for char in stringToParse: #second loop extract column numbers
@@ -408,54 +404,6 @@ def showOptions(options):
             print (options.index(i), i)
 
 queryTable = ''
-
-def checkExists(input, checkAgainst):
-    if(input == 'exit'):
-        return True
-    for i in checkAgainst:
-        if(i == input):
-            return True
-    return False
-
-def createColumnTable(listOfColumns, table, rowLimit, unique):
-    rowLimit = int(rowLimit)
-
-    pan.set_option("display.max_rows", None)
-    pan.set_option("display.max_columns", None)
-
-    data = {}
-
-    for col in listOfColumns:
-        if rowLimit != 0:
-            rows = cursor.execute(f"SELECT {col} FROM {table} LIMIT {rowLimit}").fetchall()
-        else:
-            rows = cursor.execute(f"SELECT {col} FROM {table}").fetchall()
-
-        vals = [r[0] for r in rows]
-
-        if unique == 'u':
-            vals = list(dict.fromkeys(vals)) 
-
-        data[col] = vals
-
-    columnTable = pan.DataFrame(dict([(col, pan.Series(vals)) for col, vals in data.items()]))
-
-    return columnTable
-
-def assignGlobalIDs(pdDataFrame):
-    valueToID = {}
-    currentID = 1
-
-    for col in pdDataFrame.columns:
-        newVals = []
-        for val in pdDataFrame[col]:
-            if val not in valueToID:
-                valueToID[val] = currentID
-                currentID += 1
-            newVals.append(valueToID[val])
-        pdDataFrame[col] = newVals
-
-    return pdDataFrame, valueToID
 
 #-----PROGRAM-----
 while queryTable != "exit":
