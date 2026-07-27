@@ -271,7 +271,7 @@ def actionChoice():
         
         if action.upper().startswith('F'):
             filterBy = input('What would you like to filter by?' \
-            '(C)category, (R)range, (N)number, (B)back')
+            '(C)category, (R)range, (B)back')
             while filterBy.upper()[0] != 'B':
                 if(filterBy.upper().startswith('C')):
                     print(f"Here are the categories you can sort by (based on your selected columns):\n")
@@ -279,6 +279,57 @@ def actionChoice():
                     for i in colSelection:
                         if(checkDataType(i, activeUser) == dataType.CATEGORICAL):
                             possibleCategories.append(i)
+                    print(createColumnTable(possibleCategories, activeUser, 0, 'u'))
+                    category = input('Select your category by number:\n')
+                
+                
+                while filterBy.upper().startswith('R'):
+                    dataSep()
+                    if text_columns:
+                        print("\n**The following text columns cannot be calculated and will be skipped:**")
+                        for col in text_columns:
+                            print(f" - {col}")
+                        print()
+
+                    showOptions(numeric_columns)
+                    affectedCol = int(input("What column do you want the range to affect?: \n"))
+                    affectedCol = numeric_columns[affectedCol]
+                    if affectedCol in numeric_columns:
+                        cursor.execute(f'SELECT MIN("{affectedCol}"), MAX("{affectedCol}") FROM "{activeUser}"')
+                        db_min, db_max = cursor.fetchone()
+                        print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
+
+                        try:
+                            Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
+                            endr = float(input('End: '))
+                            
+                            rangQue = f'SELECT * FROM "{activeUser}" WHERE "{affectedCol}" BETWEEN ? AND ?'
+                            cursor.execute(rangQue, (Startr, endr))
+                            
+                            results = cursor.fetchall()
+                            print(f"\nFound {len(results)} matching row(s):")
+                            for row in results:
+                                print(row)
+                            choi = input('Continue filtering?(Y/N):\n')
+                            if choi.upper().startswith('Y'):
+                             filterBy == 'R'
+                            elif choi.upper().startswith('N'):
+                                filterBy == ''
+
+                                actionChoice()
+                        except ValueError:
+                            print("\nError: Please enter numbers only for the range bounds.")
+                    else:
+                        print(f"\nError: '{affectedCol}' is not a valid numeric column.")
+                        filterBy = input('Continue filtering?(Y/N):\n')
+                    
+                        if filterBy.upper().startswith('Y'):
+                            filterBy == 'R'
+                        elif filterBy.upper().startswith('N'):
+                            actionChoice()
+                        
+
+
                     possibleCategories = list(possibleCategories)
                     showOptions(possibleCategories)
                     category = input('Select your category by number:')
