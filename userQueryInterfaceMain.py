@@ -70,7 +70,7 @@ def selectionHandler(queryTable):
     "[column_number,column_number,...,(limit)]\n"
     "Input column number as 'A' to view all columns and () as 0 for no limit\n")
     while not contains(selection, '(') or not contains(selection, ')'):
-        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
+        print("You didn't specify a limit! Please specify a limit by enclosing it in parenthesis ().\n")
         selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
             "[column_number,column_number,...,(limit)]\n"
             "Input column number as 'A' to view all columns and () as 0 for no limit\n")
@@ -93,10 +93,12 @@ def selectionHandler(queryTable):
         except:
             print("Your selection was structured incorrectly. Try again.")
             return selectionHandler(queryTable)
-    for i in colSelection:
-        if i not in range(len(optionList) - 1):
-            print("Your selection does not exist. Please enter only available numbers.")
-            return selectionHandler(queryTable)
+    for char in selection:
+        if char.isdigit():
+            idx = int(char)
+            if idx < 0 or idx >= len(optionList):
+                print("Your selection does not exist. Please enter only available numbers.")
+                return selectionHandler(queryTable)
     restultingInfo.append(colSelection)
     restultingInfo.append(limit)
     restultingInfo.append(originalSelection)
@@ -323,18 +325,20 @@ def actionChoice(query):
                     print(query.dataFrame)
                     break 
                 
-                '''while filterBy.upper().startswith('R'):
+                while filterBy.upper().startswith('R'):
                     #dataSep()
-                    if text_columns:
-                        print("\n**The following text columns cannot be calculated and will be skipped:**")
-                        for col in text_columns:
+                    validColumns = []
+                    print("\n**The following text columns cannot be calculated and will be skipped:**")
+                    for col in query.columnNames:
+                        if(checkDataType(col, query.tableName) == dataType.CATEGORICAL):
                             print(f" - {col}")
-                        print()
-
-                    showOptions(numeric_columns)
+                        else:
+                            validColumns.append(col)
+                    
+                    showOptions(validColumns)
                     affectedCol = int(input("What column do you want the range to affect?: \n"))
-                    affectedCol = numeric_columns[affectedCol]
-                    if affectedCol in numeric_columns:
+                    affectedCol = validColumns[affectedCol]
+                    if affectedCol in validColumns:
                         cursor.execute(f'SELECT MIN("{affectedCol}"), MAX("{affectedCol}") FROM "{queryTable}"')
                         db_min, db_max = cursor.fetchone()
                         print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
@@ -366,7 +370,7 @@ def actionChoice(query):
                         if filterBy.upper().startswith('Y'):
                             filterBy == 'R'
                         elif filterBy.upper().startswith('N'):
-                            actionChoice()'''
+                            actionChoice()
         action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
                                 "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 
