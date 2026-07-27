@@ -142,6 +142,7 @@ def actionChoice():
         "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
     userQuery = f'SELECT * FROM {activeUser}'
     while action.upper() != 'Q':
+        colSelection = pan.read_sql_query(userQuery, dataConnect).columns.tolist()
         print("\n")
         
         if action.upper()[0] == 'A':
@@ -156,8 +157,9 @@ def actionChoice():
             
         if action.upper()[0] == 'V':
             gC = pan.read_sql_query(userQuery, dataConnect)
-            print(createColumnTable(gC.columns.tolist(), activeUser, infos[1], 'n'))
-            break
+            print(createColumnTable(colSelection, activeUser, infos[1], 'n'))
+            action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
+        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
 
         if action.upper().startswith('C'):
             calculation = input('What would you like to Calculate?:\n'
@@ -279,8 +281,20 @@ def actionChoice():
                     for i in colSelection:
                         if(checkDataType(i, activeUser) == dataType.CATEGORICAL):
                             possibleCategories.append(i)
-                    print(createColumnTable(possibleCategories, activeUser, 0, 'u'))
+                    showOptions(possibleCategories)
+                    #print(createColumnTable(possibleCategories, activeUser, 0, 'u'))
                     category = input('Select your category by number:\n')
+                    #possibleCategories = list(possibleCategories)
+                    #showOptions(possibleCategories)
+                    #category = input('Select your category by number:')
+                    possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {activeUser}")]))
+                    showOptions(possibleFilters)
+                    chosenFilter = input('Choose what to filter by with number:\n')
+                    userQuery = f'SELECT * FROM {activeUser} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
+                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
+                    filtered = pan.read_sql(userQuery, dataConnect)
+                    print(filtered)
+                    break
                 
                 
                 while filterBy.upper().startswith('R'):
@@ -327,20 +341,6 @@ def actionChoice():
                             filterBy == 'R'
                         elif filterBy.upper().startswith('N'):
                             actionChoice()
-                        
-
-
-                    possibleCategories = list(possibleCategories)
-                    showOptions(possibleCategories)
-                    category = input('Select your category by number:')
-                    possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {activeUser}")]))
-                    showOptions(possibleFilters)
-                    chosenFilter = input('Choose what to filter by with number:\n')
-                    userQuery = f'SELECT * FROM {activeUser} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
-                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
-                    filtered = pan.read_sql(userQuery, dataConnect)
-                    print(filtered)
-                    break
 
     #newQuery()
     #print("You have quit.")
