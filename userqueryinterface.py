@@ -112,11 +112,6 @@ def dataSep():
                     text_columns.append(column)
             return numeric_columns, text_columns
 
-
-            
-
-
-
 def begin():
     global activeUser
     global optionList
@@ -144,13 +139,13 @@ def actionChoice():
     
     optionList = getColumns()
     action = input(f"What would you like to do with {len(infos[0])} column(s)?\n" \
-        "(V)view, (S)select, (C)calculations, (F)filter, (E)edit my selection, (SS)save to .CSV, (Q)quit\n")
-
+        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
+    userQuery = f'SELECT * FROM {activeUser}'
     while action.upper() != 'Q':
         print("\n")
         
         if action.upper()[0] == 'A':
-            userQuery = f'SELECT * FROM {activeUser}'
+            
             cursor.execute(userQuery)
             data = cursor.fetchall()
             for row in data:
@@ -160,7 +155,9 @@ def actionChoice():
             break
             
         if action.upper()[0] == 'V':
-            print(createColumnTable(infos[0], activeUser, infos[1], 'n'))
+            gC = pan.read_sql_query(userQuery, dataConnect)
+            print(createColumnTable(gC.columns.tolist(), activeUser, infos[1], 'n'))
+            break
 
         if action.upper().startswith('C'):
             calculation = input('What would you like to Calculate?:\n'
@@ -294,11 +291,8 @@ def actionChoice():
                     print(filtered)
                     break
 
-                    
-            
-    action = ''
-    newQuery()
-    print("You have quit.")
+    #newQuery()
+    #print("You have quit.")
     sys.exit()
 
 def compoundOptions(listOfOptions, table):
@@ -401,7 +395,6 @@ def createColumnTable(listOfColumns, table, rowLimit, unique):
 
     return columnTable
 
-
 def assignGlobalIDs(pdDataFrame):
     valueToID = {}
     currentID = 1
@@ -417,22 +410,8 @@ def assignGlobalIDs(pdDataFrame):
 
     return pdDataFrame, valueToID
 
-
-
-
 #-----PROGRAM-----
 while activeUser != "exit":
     begin()
 
     checkActive()
-    
-
-
-
-
-
-
-
-
-
-
