@@ -25,15 +25,20 @@ class userQuery():
     def calculate(self, column, calc):
         df = self.dataFrame
         if(calc == 'A'): #Average
-            df[column].mean()
+            return df[column].mean()
         if(calc == 'M'): #Median
-            df[column].median()
+            return df[column].median()
         if(calc == 'T'): #Total
-            df[column].sum()
+            return df[column].sum()
         if(calc == 'H'): #Highest(max)
-            df[column].max()
+            return df[column].max()
         if(calc == 'L'): #Lowest(min)
-            df[column].min()
+            return df[column].min()
+
+    def totalCategorical(self, column, targetVal):
+        df = self.dataFrame
+        return (df[column] == targetVal).sum()
+
 
     def filterCategorical(self, column, targetValue):
         df = self.dataFrame
@@ -185,7 +190,7 @@ def actionChoice(query):
     action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
         "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
     while action.upper() != 'Q':
-        colSelection = query.columnNames
+        #colSelection = query.columnNames
         print("\n")
         
         '''if action.upper()[0] == 'A':
@@ -204,20 +209,33 @@ def actionChoice(query):
         "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .CSV, (Q)quit\n")
 
         if action.upper().startswith('C'):
+            print("\nNote that non-numerical columns cannot have most calculations performed on them\n")
+            myColumns = query.columnNames
+            showOptions(myColumns)
+
+            columnAffected = input ("Which of your column do you want to perform calcs on?")
+            chosenColumn = myColumns[int(columnAffected)]
             calculation = input('What would you like to Calculate?:\n'
                                 "(T)Total, (H)Highest, (L)Lowest, (A)Average, (M)Median, (B)Back:\n")
             
-            if calculation.upper().startswith() == 'T':
-                print(query.calculate('T'))
-            elif calculation.upper().startswith() == 'H':
-                print(query.calculate('H'))
-            elif calculation.upper().startswith() == 'L':
-                print(query.calculate('L'))
-            elif calculation.upper().startswith() == 'A':
-                print(query.calculate('H'))
-            elif calculation.upper().startswith() == 'M':
-                print(query.calculate('H'))
-            elif calculation.upper().startswith() == 'B':
+            if calculation.upper().startswith('T'):
+                if(checkDataType(chosenColumn, query.tableName) == dataType.CATEGORICAL):
+                    possibleVals = list(set([d[0] for d in cursor.execute(f"SELECT {myColumns[int(columnAffected)]} FROM {query.tableName}")]))
+                    possibleVals = list(set(possibleVals))
+                    showOptions(possibleVals)
+                    chosenVal = input("The column you chose does not contain numerical data. Please select a specific value of your column to use for calculations:")
+                    print(f"{possibleVals[int(chosenVal)]} total: {query.totalCategorical(chosenColumn, possibleVals[int(chosenVal)])}")
+                else:
+                    print(f"{myColumns[columnAffected]} total: {query.calculate(chosenColumn,'T')}")
+            if calculation.upper().startswith('H'):
+                print(f"{myColumns[columnAffected]} highest: {query.calculate(chosenColumn,'H')}")
+            if calculation.upper().startswith('L'):
+                print(f"{myColumns[columnAffected]} lowest: {query.calculate(chosenColumn,'L')}")
+            if calculation.upper().startswith('A'):
+                print(f"{myColumns[columnAffected]} average: {query.calculate(chosenColumn,'H')}")
+            if calculation.upper().startswith('M'):
+                print(f"{myColumns[columnAffected]} median: {query.calculate(chosenColumn,'M')}")
+            if calculation.upper().startswith('B'):
                 action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n"
                             "(V)view, (C)calculations, (F)find range, (E)edit my selection, (S)save to .csv, (Q)quit: ")
                 
@@ -350,6 +368,8 @@ def actionChoice(query):
                             filterBy == 'R'
                         elif filterBy.upper().startswith('N'):
                             actionChoice()'''
+        action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
+                                "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 
     #newQuery()
     #print("You have quit.")
@@ -400,8 +420,9 @@ def getColumns(tableName):
     return column_names
 
 def showOptions(options):
-        for i in options:
-            print (options.index(i), i)
+    for idx, val in enumerate(options):
+        print(idx, val)
+
 
 queryTable = ''
 
