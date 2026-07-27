@@ -6,6 +6,36 @@ import os
 from enum import Enum
 import textwrap
 
+class userQuery():
+    def __init__(self, tableName, columnNames, limit, stringQuery, SQLconnection):
+        self.tableName = tableName
+        self.columnNames = columnNames
+        self.limit = limit
+        self.stringQuery = stringQuery 
+        self.SQLconnection = SQLconnection
+        self.dataFrame = pan.read_sql_query(self.stringQuery)
+
+    def runQuery(self, cursor):
+        result = cursor.execute(self.stringQuery).fetchall()
+
+    def calculate(self, column, calc):
+        df = self.dataFrame
+        if(calc == 'A'): #Average
+            df[column].mean()
+        if(calc == 'M'): #Median
+            df[column].median()
+        if(calc == 'T'): #Total
+            df[column].sum()
+        if(calc == 'H'): #Highest(max)
+            df[column].max()
+        if(calc == 'L'): #Lowest(min)
+            df[column].min()
+
+    def filterCategorical(self, column, targetValue):
+        df = self.dataFrame
+        #change the actual dataframe itself
+        self.dataFrame = df[df[column] == targetValue]
+
 class dataType(Enum):
     NUMERICAL = 0
     CATEGORICAL = 1
@@ -282,11 +312,7 @@ def actionChoice():
                         if(checkDataType(i, activeUser) == dataType.CATEGORICAL):
                             possibleCategories.append(i)
                     showOptions(possibleCategories)
-                    #print(createColumnTable(possibleCategories, activeUser, 0, 'u'))
                     category = input('Select your category by number:\n')
-                    #possibleCategories = list(possibleCategories)
-                    #showOptions(possibleCategories)
-                    #category = input('Select your category by number:')
                     possibleFilters = list(set([d[0] for d in cursor.execute(f"SELECT {possibleCategories[int(category)]} FROM {activeUser}")]))
                     showOptions(possibleFilters)
                     chosenFilter = input('Choose what to filter by with number:\n')
