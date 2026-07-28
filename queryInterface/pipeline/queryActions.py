@@ -189,6 +189,7 @@ def actionChoice(query):
                             
                             
                             query.getRange(affectedCol, Startr, endr)
+                            print(query.dataFrame)
       
                             choi = input('Continue filtering?(Y/N):\n')
                             if choi.upper().startswith('Y'):
