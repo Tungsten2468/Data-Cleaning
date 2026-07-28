@@ -43,7 +43,7 @@ def actionChoice(query):
             hf.showOptions(myColumns)
             hf.whitespace()
             columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
-            while int(columnAffected) not in range(len(myColumns) - 1):
+            while int(columnAffected) not in range(len(myColumns)):
                 print("[!]That number is invalid. Please choose a valid number from the table[!]")
                 columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
             chosenColumn = myColumns[int(columnAffected)]
@@ -197,6 +197,7 @@ def actionChoice(query):
                              continue
                             elif choi.upper().startswith('N'):
                                 filterBy = ''
+                                break
 
                                 actionChoice(query)
                         except ValueError:
@@ -204,11 +205,15 @@ def actionChoice(query):
                     else:
                         print(f"\nError: '{affectedCol}' is not a valid numeric column.\n")
                         filterBy = input('Continue filtering?(Y/N):\n')
-                    
+                        if query.dataFrame.empty:
+                            print("[!]No rows left after filtering.[!]")
+                            break
+
                         if filterBy.upper().startswith('Y'):
-                            filterBy == 'R'
+                            filterBy = 'R'
                         elif filterBy.upper().startswith('N'):
                             actionChoice(query)
+                            break
         action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
                                 "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 
