@@ -8,6 +8,7 @@ from main import dataConnect
 from main import cursor
 from main import fileName
 
+from pipeline import beginQueryCreation as returnToStart
 #from pipeline.beginQueryCreation import queryTable
 
 pan.set_option("display.max_rows", None)
@@ -85,12 +86,12 @@ def getTables():
         tableList.append(i[0])
     return tableList
 
-'''def newQuery():
-        con = input('\nAre you sure you want to make a new query?(Y/N):\n')
+def newQuery():
+        con = input('\nAre you sure you want to make a new query? You will lose this one if you do(Y/N):\n')
         if con.upper()[0] == 'N':
             return
         if con.upper()[0] == 'Y':
-            begin()'''
+            returnToStart.begin()
 
 def getColumns(tableName):
     tableColumns=f"PRAGMA table_info('{tableName}');"
