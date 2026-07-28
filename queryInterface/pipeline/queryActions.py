@@ -43,7 +43,7 @@ def actionChoice(query):
             hf.showOptions(myColumns)
             hf.whitespace()
             columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
-            while int(columnAffected) not in range(len(myColumns)):
+            while not columnAffected.isdigit() or int(columnAffected) not in range(len(myColumns)):
                 print("[!]That number is invalid. Please choose a valid number from the table[!]")
                 columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
             chosenColumn = myColumns[int(columnAffected)]
@@ -65,7 +65,7 @@ def actionChoice(query):
             if calculation.upper().startswith('L'):
                 print(f"{myColumns[int(columnAffected)]} lowest: {query.calculate(chosenColumn,'L')}\n")
             if calculation.upper().startswith('A'):
-                print(f"{myColumns[int(columnAffected)]} average: {query.calculate(chosenColumn,'H')}\n")
+                print(f"{myColumns[int(columnAffected)]} average: {query.calculate(chosenColumn,'A')}\n")
             if calculation.upper().startswith('M'):
                 print(f"{myColumns[int(columnAffected)]} median: {query.calculate(chosenColumn,'M')}\n")
             if calculation.upper().startswith('B'):
@@ -100,8 +100,8 @@ def actionChoice(query):
                             query.columnNames.pop(idx)
 
                     # rebuild selection string
-                    selection_indexes = [index_map[col] for col in query.columnNames]
-                    query.stringSelection = ",".join(map(str, selection_indexes)) + f"({query.columnNames})"
+                    selection_indexes = sorted([index_map[col] for col in query.columnNames])
+                    query.stringSelection = "[" + ",".join(map(str, selection_indexes)) + f"({query.limit})]"
 
                 elif edit.startswith('L'):
                     newLimit = input("Enter new limit:\n")
@@ -109,6 +109,8 @@ def actionChoice(query):
                         print("Digits only.")
                         newLimit = input("Enter new limit:\n")
                     query.limit = int(newLimit)
+                    selection_indexes = sorted([index_map[col] for col in query.columnNames])
+                    query.stringSelection = "[" + ",".join(map(str, selection_indexes)) + f"({query.limit})]"
 
                 elif edit.startswith('N'):
                     hf.newQuery()
@@ -130,6 +132,8 @@ def actionChoice(query):
                         # Add column
                         query.columnNames.append(i)
 
+                    selection_indexes = sorted([index_map[col] for col in query.columnNames])
+                    query.stringSelection = "[" + ",".join(map(str, selection_indexes)) + "]"
                     print(f"Updated selection: {query.columnNames}")
        
         if action.upper().startswith('S'):
@@ -137,14 +141,14 @@ def actionChoice(query):
                 csvName = input('Please name your .CSV file:\n')
                 print("Saving...")
                 hf.csvMaker(csvName,query.columnNames, query.tableName)
-                print(f"{csvName}.csv has been saved at {os.path.dirname("queryfolder/"+csvName+".csv")}\n")
+                print(f"{csvName}.csv has been saved at {os.path.dirname('queryfolder/'+csvName+'.csv')}\n")
                 break
         
         if action.upper().startswith('F'):
             filterBy = input('What would you like to filter by?\n' \
-            '(C)category, (R)range, (B)back')
-            while filterBy.upper()[0] != 'B':
-                if(filterBy.upper().startswith('C')):
+            '(C)category, (R)range, (B)back\n').upper()
+            while filterBy[0] != 'B':
+                if filterBy.startswith('C'):
                     print(f"Here are the categories you can sort by (based on your selected columns):\n")
                     possibleCategories = []
                     for i in query.columnNames:
@@ -157,17 +161,14 @@ def actionChoice(query):
                     chosenFilter = input('Choose what to filter by with number:\n')
                     query.filterCategorical(possibleCategories[int(category)], possibleFilters[int(chosenFilter)])
                     query.stringQuery = f'SELECT * FROM {query.tableName} WHERE {possibleCategories[int(category)]}= "{possibleFilters[int(chosenFilter)]}"'
-                    print(f'Filtered your selection by {possibleFilters[int(chosenFilter)]}.\n')
-                    filtered = pan.read_sql(query.stringQuery, dataConnect)
-                    print(query.dataFrame)
-                    break 
-                
-                while filterBy.upper().startswith('R'):
-                    #dataSep()
+                    print(query.dataFrame)  
+                    break
+
+                elif filterBy.startswith('R'):
                     validColumns = []
                     print("\n**The following columns cannot be calculated and will be skipped:**\n")
                     for col in query.columnNames:
-                        if(hf.checkDataType(col, query.tableName) == hf.dataType.CATEGORICAL):
+                        if hf.checkDataType(col, query.tableName) == hf.dataType.CATEGORICAL:
                             print(f" - {col}")
                         else:
                             validColumns.append(col)
@@ -176,46 +177,53 @@ def actionChoice(query):
                     print('Choose from the following columns:')
                     hf.showOptions(validColumns)
                     hf.whitespace()
-                    affectedCol = int(input("What column do you want the range to affect?: \n"))
-                    affectedCol = validColumns[affectedCol]
-                    if affectedCol in validColumns:
-                        cursor.execute(f'SELECT MIN("{affectedCol}"), MAX("{affectedCol}") FROM "{query.tableName}"')
-                        db_min, db_max = cursor.fetchone()
-                        print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
+                    
+                    try:
+                        affectedColIdx = int(input("What column do you want the range to affect?: \n"))
+                        if 0 <= affectedColIdx < len(validColumns):
+                            affectedCol = validColumns[affectedColIdx]
+                        else:
 
-                        try:
-                            Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
-                            endr = float(input('End: '))
-                            
-                            
-                            query.getRange(affectedCol, Startr, endr)
-                            print(query.dataFrame)
-      
-                            choi = input('Continue filtering?(Y/N):\n')
-                            if choi.upper().startswith('Y'):
-                              filterBy = 'R'
-                            elif choi.upper().startswith('N'):
-                                filterBy = ''
+                            print(f"\nError: Invalid column selection index.\n")
+                            choi = input('Continue filtering?(Y/N):\n').upper()
+                            if choi.startswith('Y'):
+                                filterBy = 'R'
+                                continue
+                            else:
+                                filterBy = 'B'
                                 break
+                    except ValueError:
+                        print("\nError: Please enter a valid column index number.\n")
+                        continue
 
-                                actionChoice(query)
-                        except ValueError:
-                            print("\nError: Please enter numbers only for the range bounds.\n")
-                    else:
-                        print(f"\nError: '{affectedCol}' is not a valid numeric column.\n")
-                        filterBy = input('Continue filtering?(Y/N):\n')
+                    cursor.execute(f'SELECT MIN("{affectedCol}"), MAX("{affectedCol}") FROM "{query.tableName}"')
+                    db_min, db_max = cursor.fetchone()
+                    print(f"\nCurrent bounds for '{affectedCol}': Min is {db_min}, Max is {db_max}")
+
+                    try:
+                        Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
+                        endr = float(input('End: '))
+                        
+                        query.getRange(affectedCol, Startr, endr)
+                        print(query.dataFrame)
+  
                         if query.dataFrame.empty:
                             print("[!]No rows left after filtering.[!]")
+                            filterBy = 'B'
                             break
 
-                        if filterBy.upper().startswith('Y'):
+                    except ValueError:
+                        print("\nError: Please enter numbers only for the range bounds.\n")
+                        choi = input('Continue filtering?(Y/N):\n').upper()
+                        if choi.startswith('Y'):
                             filterBy = 'R'
-                        elif filterBy.upper().startswith('N'):
-                            actionChoice(query)
+                            continue
+                        else:
+                            filterBy = 'B'
                             break
-        action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
-                                "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 
+                        
+   
     #newQuery()
     print("You have quit.")
     sys.exit()
