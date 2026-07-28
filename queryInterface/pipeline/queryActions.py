@@ -193,9 +193,10 @@ def actionChoice(query):
       
                             choi = input('Continue filtering?(Y/N):\n')
                             if choi.upper().startswith('Y'):
-                             filterBy == 'R'
+                             filterBy = 'R'
+                             continue
                             elif choi.upper().startswith('N'):
-                                filterBy == ''
+                                filterBy = ''
 
                                 actionChoice(query)
                         except ValueError:
