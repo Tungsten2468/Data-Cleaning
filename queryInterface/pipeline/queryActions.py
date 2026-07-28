@@ -43,7 +43,7 @@ def actionChoice(query):
             hf.showOptions(myColumns)
             hf.whitespace()
             columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
-            while int(columnAffected) not in range(len(myColumns) - 1):
+            while int(columnAffected) not in range(len(myColumns)):
                 print("[!]That number is invalid. Please choose a valid number from the table[!]")
                 columnAffected = input ("Which of your column do you want to perform calcs on(enter by number)?")
             chosenColumn = myColumns[int(columnAffected)]
