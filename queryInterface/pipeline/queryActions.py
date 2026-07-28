@@ -193,9 +193,10 @@ def actionChoice(query):
       
                             choi = input('Continue filtering?(Y/N):\n')
                             if choi.upper().startswith('Y'):
-                             filterBy == 'R'
+                              filterBy = 'R'
                             elif choi.upper().startswith('N'):
-                                filterBy == ''
+                                filterBy = ''
+                                break
 
                                 actionChoice(query)
                         except ValueError:
@@ -203,11 +204,15 @@ def actionChoice(query):
                     else:
                         print(f"\nError: '{affectedCol}' is not a valid numeric column.\n")
                         filterBy = input('Continue filtering?(Y/N):\n')
-                    
+                        if query.dataFrame.empty:
+                            print("[!]No rows left after filtering.[!]")
+                            break
+
                         if filterBy.upper().startswith('Y'):
-                            filterBy == 'R'
+                            filterBy = 'R'
                         elif filterBy.upper().startswith('N'):
                             actionChoice(query)
+                            break
         action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
                                 "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 

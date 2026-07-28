@@ -50,8 +50,11 @@ class userQuery():
         self.dataFrame = df[df[column] == targetValue]
     
     def getRange(self, column, start, end):
-        df = self.dataFrame
-        self.dataFrame = df[(df[column] < end) & (df[column] > start)]
+        self.dataFrame = self.dataFrame[
+            (self.dataFrame[column] > start) &
+            (self.dataFrame[column] < end)
+        ]
+
 
         
 def parseTextToList(selection_list, options):
