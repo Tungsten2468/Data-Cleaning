@@ -11,3 +11,5 @@ syn_output_data
 venv
 test.py
 queryFolder
+final_reports.db
+.claude/

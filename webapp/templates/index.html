@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Explorer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="logo">◧</div>
+      <div class="brand">
+        <h1>Data Explorer</h1>
+        <p>Interactive query &amp; analysis interface</p>
+      </div>
+      <div class="spacer"></div>
+      <div class="db-chip">Dataset: <b id="dbName">—</b></div>
+    </header>
+
+    <div class="layout">
+      <!-- ============ SIDEBAR ============ -->
+      <aside class="sidebar">
+        <div class="panel">
+          <div class="p-head"><span class="dot"></span> Data source</div>
+          <div class="p-body">
+            <label class="field">
+              <span>Table</span>
+              <select id="tableSelect"></select>
+            </label>
+
+            <div class="mini-actions">
+              <button class="ghost" id="selectAll">Select all</button>
+              <button class="ghost" id="clearCols">Clear</button>
+            </div>
+
+            <label class="field" style="margin-bottom:8px">
+              <span>Columns</span>
+            </label>
+            <div class="col-list" id="colList"></div>
+
+            <label class="field" style="margin-top:14px">
+              <span>Row limit (0 = no limit)</span>
+              <input type="number" id="limitInput" value="100" min="0" />
+            </label>
+
+            <button class="primary" id="runQuery" style="width:100%">Run query ▸</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main class="main">
+        <!-- KPIs -->
+        <section class="kpis" id="kpis">
+          <div class="kpi"><div class="k-label">Rows in table</div><div class="k-value" id="kpiTotal">—</div><div class="k-sub">total records</div></div>
+          <div class="kpi"><div class="k-label">Matching rows</div><div class="k-value" id="kpiMatch">—</div><div class="k-sub">after filters</div></div>
+          <div class="kpi"><div class="k-label">Columns</div><div class="k-value" id="kpiCols">—</div><div class="k-sub">selected</div></div>
+          <div class="kpi"><div class="k-label">Active filters</div><div class="k-value" id="kpiFilters">0</div><div class="k-sub">applied</div></div>
+        </section>
+
+        <!-- Filters -->
+        <section class="panel">
+          <div class="p-head"><span class="dot"></span> Filters</div>
+          <div class="p-body">
+            <div class="filter-row">
+              <label class="field">
+                <span>Column</span>
+                <select id="filterColumn"></select>
+              </label>
+              <div id="filterInputArea" style="flex:2; display:flex; gap:10px; align-items:flex-end;"></div>
+              <button class="primary" id="addFilter">Add filter</button>
+            </div>
+            <div class="chips" id="filterChips"><span class="empty-note">No filters applied — showing all rows.</span></div>
+          </div>
+        </section>
+
+        <!-- Data table -->
+        <section class="panel">
+          <div class="p-head"><span class="dot"></span> Results
+            <div style="margin-left:auto; display:flex; gap:8px;">
+              <button class="ghost" id="exportBtn">⬇ Export CSV</button>
+            </div>
+          </div>
+          <div class="p-body">
+            <div class="table-wrap">
+              <table class="data" id="dataTable">
+                <thead></thead>
+                <tbody><tr><td class="loading">Run a query to see results.</td></tr></tbody>
+              </table>
+            </div>
+            <div class="result-meta" id="resultMeta"></div>
+          </div>
+        </section>
+
+        <!-- Calculations + Chart -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;" id="analysisRow">
+          <section class="panel">
+            <div class="p-head"><span class="dot"></span> Calculations</div>
+            <div class="p-body">
+              <div class="calc-grid">
+                <label class="field" style="margin-bottom:0">
+                  <span>Column</span>
+                  <select id="calcColumn"></select>
+                </label>
+                <label class="field" style="margin-bottom:0" id="calcValueWrap" hidden>
+                  <span>Value</span>
+                  <select id="calcValue"></select>
+                </label>
+              </div>
+              <div class="calc-ops" id="calcOps"></div>
+              <div class="calc-result" id="calcResult">
+                <div class="cr-label" id="crLabel"></div>
+                <div class="cr-value" id="crValue"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="p-head"><span class="dot"></span> Distribution</div>
+            <div class="p-body">
+              <div class="chart-controls">
+                <label class="field">
+                  <span>Break down by</span>
+                  <select id="chartColumn"></select>
+                </label>
+              </div>
+              <div class="bars" id="chartBars"><div class="loading">Pick a column to visualize.</div></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="footer-note">Data Explorer demo · powered by the query interface engine</div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
