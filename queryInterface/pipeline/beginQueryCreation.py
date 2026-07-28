@@ -48,6 +48,30 @@ class userQuery():
         df = self.dataFrame
         #change the actual dataframe itself
         self.dataFrame = df[df[column] == targetValue]
+    
+    def getRange(self, column, start, end):
+        df = self.dataFrame
+        self.dataFrame = df[(df[column] < end) & (df[column] > start)]
+
+        
+def parseTextToList(selection_list, options):
+    cleaned = "".join(selection_list).replace('[', '').replace(']', '').strip()
+    if not cleaned:
+        return []
+    parts = cleaned.split(',')
+    selected = []
+    for part in parts:
+        part = part.strip()
+        if part.isdigit():
+            idx = int(part)
+            if 0 <= idx < len(options):
+                selected.append(options[idx])
+        elif part in options:
+            selected.append(part)
+    return selected
+
+def contains(container, targetElement):
+    return targetElement in container
 
 def begin():
     optionList = hf.getTables()
@@ -74,39 +98,36 @@ def selectionHandler(queryTable):
     optionList = hf.getColumns(queryTable)
     colSelection = []
     hf.showOptions(optionList)
-    selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
-    "[column_number,column_number,...,(limit)]\n"
-    "Input column number as 'A' to view all columns and () as 0 for no limit\n")
-    while not hf.contains(selection, '(') or not hf.contains(selection, ')'):
-        print("[!]You didn't specify a limit! Please specify a limit by enclosing it in parenthesis()[!].\n")
-        selection = input("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
-            "[column_number,column_number,...,(limit)]\n"
-            "Input column number as 'A' to view all columns and () as 0 for no limit\n")
-    charIndex = 0
-    originalSelection = selection #Keep record of the selection made for later editing purposes
-    selection = list(selection)
-    limit = '' #keep as string initially so numbers can be concactenated
-    for char in selection: #first loop extracts the limit, wherever it was specified in the string
-        if(char == '('):
-            start = selection.index('(') + 1
-            end = selection.index(')', start)
-            limit = ''.join(selection[start:end])
-            selection = selection[:start-1] + selection[end+1:]
-            break 
-    if 'A' in originalSelection.upper():
-        colSelection = optionList
+    
+    prompt = ("\nSelect the column(s) and limit you want to work with (using the # on the left side) in the following format:\n"
+              "[column_number,column_number,...,(limit)]\n"
+              "Input column number as 'A' to view all columns and () as 0 for no limit\n")
+    
+    selection = input(prompt)
+    while not (contains(selection, '(') and contains(selection, ')')):
+        print("You didn't specify a limit! Please specify a limit by enclosing it in commas.\n")
+        selection = input(prompt)
+        
+    originalSelection = selection
+    
+    start = selection.index('(')
+    end = selection.index(')')
+    limit_str = selection[start+1:end].strip()
+    limit = int(limit_str) if limit_str.isdigit() else 0
+    
+    clean_selection = selection[:start] + selection[end+1:]
+    clean_selection = clean_selection.replace('[', '').replace(']', '').strip()
+    
+    is_all = False
+    for part in clean_selection.split(','):
+        if part.strip().upper() == 'A':
+            is_all = True
+            break
+            
+    if is_all:
+        colSelection = optionList   
     else:
-        try:
-            colSelection = hf.parseTextToList(selection, optionList)
-        except:
-            print("\n[!]Your selection was structured incorrectly. Try again.[!]\n")
-            return selectionHandler(queryTable)
-    for char in selection:
-        if char.isdigit():
-            idx = int(char)
-            if idx < 0 or idx >= len(optionList):
-                print("\n[!]Your selection does not exist. Please enter only available numbers.[!]")
-                return selectionHandler(queryTable)
+        colSelection = parseTextToList(list(clean_selection), optionList)
     restultingInfo.append(colSelection)
     restultingInfo.append(limit)
     restultingInfo.append(originalSelection)

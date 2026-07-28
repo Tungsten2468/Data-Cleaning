@@ -6,6 +6,7 @@ import os
 from enum import Enum
 import helpfulFunctions as hf
 
+
 from main import dataConnect
 from main import cursor
 from main import fileName
@@ -185,7 +186,9 @@ def actionChoice(query):
                             print(f" - {col}")
                         else:
                             validColumns.append(col)
-                    
+                           
+                    print()
+                    print('Choose from the following columns:')
                     hf.showOptions(validColumns)
                     hf.whitespace()
                     affectedCol = int(input("What column do you want the range to affect?: \n"))
@@ -199,20 +202,16 @@ def actionChoice(query):
                             Startr = float(input('What range do you want to filter by?(For a specific number make the start and end the same)\nStart: '))
                             endr = float(input('End: '))
                             
-                            rangQue = f'SELECT * FROM "{query.tableName}" WHERE "{affectedCol}" BETWEEN ? AND ?'
-                            cursor.execute(rangQue, (Startr, endr))
                             
-                            results = cursor.fetchall()
-                            print(f"\nFound {len(results)} matching row(s):")
-                            for row in results:
-                                print(row)
+                            query.getRange(affectedCol, Startr, endr)
+      
                             choi = input('Continue filtering?(Y/N):\n')
                             if choi.upper().startswith('Y'):
                              filterBy == 'R'
                             elif choi.upper().startswith('N'):
                                 filterBy == ''
 
-                                actionChoice()
+                                actionChoice(query)
                         except ValueError:
                             print("\nError: Please enter numbers only for the range bounds.\n")
                     else:
@@ -222,7 +221,7 @@ def actionChoice(query):
                         if filterBy.upper().startswith('Y'):
                             filterBy == 'R'
                         elif filterBy.upper().startswith('N'):
-                            actionChoice()
+                            actionChoice(query)
         action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
                                 "(V)view, (C)calculations, (F)find range, (E)edit my selection, (Q)quit")
 
