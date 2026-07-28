@@ -168,8 +168,8 @@ def actionChoice(query):
                         filterBy = 'C'
                         continue
                     else:
-                        filterBy = 'B'
-                        break
+                        actionChoice(query)
+
 
                 elif filterBy.startswith('R'):
                     validColumns = []
@@ -186,18 +186,16 @@ def actionChoice(query):
                     hf.whitespace()
                     
                     try:
-                        affectedColIdx = int(input("What column do you want the range to affect?: \n"))
-                        if 0 <= affectedColIdx < len(validColumns):
-                            affectedCol = validColumns[affectedColIdx]
+                        affectedColIdx = input("What column do you want the range to affect?: \n").strip()
+                        if affectedColIdx.isdigit() and 0 <= int(affectedColIdx) < len(validColumns):
+                            affectedCol = validColumns[int(affectedColIdx)]
                         else:
-
                             print(f"\nError: Invalid column selection index.\n")
                             choi = input('Continue filtering?(Y/N):\n').upper()
                             if choi.startswith('Y'):
-                                filterBy = 'R'
                                 continue
                             else:
-                                filterBy = 'B'
+                                actionChoice(query)
                                 break
                     except ValueError:
                         print("\nError: Please enter a valid column index number.\n")
@@ -215,25 +213,35 @@ def actionChoice(query):
                         print(query.dataFrame)
   
                         if query.dataFrame.empty:
-                            print("[!]No rows left after filtering.[!]")
-                            filterBy = 'B'
-                            break
+                            print("[!]No rows left after filtering. Resetting data to original table layout.[!]")
+                            cols_str = ", ".join([f'"{c}"' for c in query.columnNames]) if query.columnNames else "*"
+                            if query.limit != 0:
+                                query.stringQuery = f'SELECT {cols_str} FROM "{query.tableName}" LIMIT {query.limit}'
+                            else:
+                                query.stringQuery = f'SELECT {cols_str} FROM "{query.tableName}"'
+                            query.dataFrame = pan.read_sql_query(query.stringQuery, query.SQLconnection)
+                            
+                            choi = input('Retry filtering? (Y/N):\n').upper()
+                            if choi.startswith('Y'):
+                                continue
+                            else:
+                                actionChoice(query)
+
 
                         choi = input('Continue filtering?(Y/N):\n').upper()
                         if choi.startswith('Y'):
-                            filterBy = 'R'
                             continue
                         else:
-                            filterBy = 'B'
-                            break
+                            actionChoice(query)
+
                     except ValueError:
                         print("\nError: Please enter numbers only for the range bounds.\n")
                         choi = input('Continue filtering?(Y/N):\n').upper()
                         if choi.startswith('Y'):
-                            filterBy = 'R'
                             continue
                         else:
-                            filterBy = 'B'
+                            actionChoice(query)
+
                             break
 
                         
