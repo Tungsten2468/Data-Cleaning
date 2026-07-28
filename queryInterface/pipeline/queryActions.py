@@ -73,78 +73,63 @@ def actionChoice(query):
                 
             action =''
                 
-        if action.upper().startswith('E'):       
-                while True:
-                    newOptions = hf.getColumns(query.tableName)
+        if action.upper().startswith('E'):
+            while True:
+                newOptions = hf.getColumns(query.tableName)
+                index_map = {col: idx for idx, col in enumerate(newOptions)}
+
+                hf.showOptions(newOptions)
+
+                columnIndexes = [index_map[col] for col in query.columnNames]
+                print(f"Current Selection: {columnIndexes}, ({query.limit})")
+
+                edit = input("(A)Add, (R)Remove, (L)Limit, (N)New Query, (B)Back:\n").upper()
+
+                if edit.startswith('B'):
+                    action = input("(V)view, (C)calc, (F)filter, (E)edit, (S)save, (Q)quit")
+                    break
+
+                elif edit.startswith('R'):
+                    print(query.columnNames)
+                    removal = input("Enter column indices to remove:\n")
+                    indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
+
+                    for idx in indices:
+                        if 0 <= idx < len(query.columnNames):
+                            query.columnNames.pop(idx)
+
+                    # rebuild selection string
+                    selection_indexes = [index_map[col] for col in query.columnNames]
+                    query.stringSelection = ",".join(map(str, selection_indexes)) + f"({query.columnNames})"
+
+                elif edit.startswith('L'):
+                    newLimit = input("Enter new limit:\n")
+                    while not newLimit.isdigit():
+                        print("Digits only.")
+                        newLimit = input("Enter new limit:\n")
+                    query.limit = int(newLimit)
+
+                elif edit.startswith('N'):
+                    hf.newQuery()
+                    break
+
+                elif edit.startswith('A'):
                     hf.showOptions(newOptions)
-                    print(f'Current Selection: {query.columnNames}, limit: {query.limit}')
-                    edit = input("What edit would you like to perform?\n(A)Add, (R)Remove, (L)Change limit, (N)New Query or (B)Back:\n").upper()
-                    
-                    if edit.startswith('B'):
-                        action = input(f"What would you like to do with {len(query.columnNames)} column(s)?\n" \
-                        "(V)view, (C)calculations, (F)filter, (E)edit my selection, (S)save to .csv, (Q)quit")
-                        break
-                        
-                    elif edit.startswith('R'):
-                        print(query.columnNames)
-                        removal = input("Enter column indices to remove (separated by commas):\n")
-                        indices = sorted([int(i) for i in removal.split(',') if i.strip().isdigit()], reverse=True)
-                        for idx in indices:
-                            if 0 <= idx < len(query.columnNames):
-                                query.columnNames.pop(idx)
-                        newSelecton = ''
-                        for i in query.columnNames:
-                            newSelecton = newSelecton + str(newOptions.index(i))
-                            if(query.columnNames.index(i) != len(query.columnNames) - 1):
-                                newSelecton = newSelecton + ','
-                        newSelecton = newSelecton + f'({query.columnNames})'
-                        query.stringSelection = newSelecton
 
-                    elif edit.startswith('L'):
-                        newLimit = input('Enter your new limit (no formatting, just digits)\n:')
-                        while newLimit.isalpha():
-                            print("[!]Only enter valid digits and try again.[!]")
-                            newLimit = input('Enter your new limit (no formatting, just digits)\n:')
-                        query.limit = newLimit
-                        edit =''
-                    elif edit.startswith('N'):
-                        edit =''
-                        hf.newQuery()
-                    elif edit.startswith('A'):
-                        # Remove already-selected columns from the available list
-                        available = [col for col in newOptions if col not in query.columnNames]
+                    new_col = input("Enter indexes to add:\n")
+                    try:
+                        ids = hf.parseTextToList(new_col, newOptions)
+                    except:
+                        print("[!]Invalid column number.[!]")
+                        continue
+                    for i in ids:
+                        if i in query.columnNames:
+                            print(f"[!]You already have {i} in your selection. It will be skipped.[!]")
+                            continue
+                        # Add column
+                        query.columnNames.append(i)
 
-                        hf.showOptions(available)
-                        print(f'Current Selection: {query.columnNames}, limit: {query.limit}')
-
-                        new_col = input(
-                            "Enter the indexes of the columns to add in the following format:\n"
-                            "[column_id,column_id,column_id,...]\n"
-                        )
-
-                        ids = hf.parseTextToList(new_col, available)
-
-                        for i in ids:
-                            # Validate number
-                            if i not in range(len(available)):
-                                print("[!] Invalid column number. Try again. [!]")
-                                continue
-
-                            colName = available[i]
-
-                            # Check for duplicates (shouldn't happen now)
-                            if colName in query.columnNames:
-                                print("[!] Column already selected. Choose another. [!]")
-                                continue
-
-                            # Add column
-                            query.columnNames.append(colName)
-
-                        # Rebuild selection string
-                        '''selectionString = ",".join(str(newOptions.index(col)) for col in query.columnNames)
-                        selectionString += f"({query.limit})"
-                        query.stringSelection = selectionString'''
-
+                    print(f"Updated selection: {query.columnNames}")
        
         if action.upper().startswith('S'):
 
